@@ -24,7 +24,7 @@ Nov 15, 2026
 | HTTP Host header attacks | ✓ | ✓ |  |
 | OAuth authentication | ✓ | ✓ |  |
 | JWT | ✓ | ✓ |  |
-| SQL Injection |  |  | ✓ |
+| SQL Injection |  | ✓ |  |
 | XXE injection |  |  | ✓ |
 | SSRF |  |  | ✓ |
 | OS command injection |  |  | ✓ |
@@ -36,11 +36,11 @@ Nov 15, 2026
 | Information disclosure |  |  | ✓ |
 | Business logic vulnerabilities |  |  | ✓ |
 | Essential skills |  |  | ✓ |
-| Prototype pollution |  |  | ✓ |
-| GraphQL API vulnerabilities |  |  | ✓ |
+| Prototype pollution |  | ✓ | ✓ |
+| GraphQL API vulnerabilities |  | ✓ |  |
 | Race conditions |  |  | ✓ |
 | NoSQL injection |  |  | ✓ |
-| API testing |  |  | ✓ |
+| API testing |  | ✓ |  |
 | Web LLM attacks |  |  | ✓ |
 | Web cache deception |  |  | ✓ |
 
