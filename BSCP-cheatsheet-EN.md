@@ -2,6 +2,8 @@
 
 Nov 15, 2026
 
+*Credits: the Stage 1/2/3 mapping in the summary table was also cross-checked against [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study), used here as a reference.*
+
 ## Exam mechanics and strategy
 
 - **Only one active user per application**: you can't be logged in as both a low-privilege user and admin at the same time. If in Stage 1 you haven't already used an interactive exploit (one that goes through the exploit server's "Deliver to Victim" — XSS, CSRF, clickjacking), in Stage 2 you need to resort to it to hijack the admin session.

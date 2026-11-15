@@ -22,6 +22,10 @@ At the top of the document there's a summary table mapping each category to its 
 - [`BSCP-cheatsheet-IT.md`](./BSCP-cheatsheet-IT.md) — Italian version
 - [`BSCP-cheatsheet-EN.md`](./BSCP-cheatsheet-EN.md) — English version
 
+## Credits
+
+The exam-stage mapping (Stage 1 / Stage 2 / Stage 3) used in the summary table was cross-checked against the stage breakdown from [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study), used here as a reference with thanks to the author.
+
 ## Disclaimer
 
 Personal study notes, not affiliated with PortSwigger. Always refer to the [Web Security Academy](https://portswigger.net/web-security) for the complete and up-to-date material.
