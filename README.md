@@ -1,27 +1,27 @@
 # BSCP Exam Notes
 
-Cheat sheet personale per la certificazione **Burp Suite Certified Practitioner (BSCP)**.
+Personal cheat sheet for the **Burp Suite Certified Practitioner (BSCP)** certification.
 
-Copre tutti i lab di livello **Practitioner** della [PortSwigger Web Security Academy](https://portswigger.net/web-security) (esclusi Apprentice ed Expert), organizzati in 31 categorie e divisi in tre sezioni corrispondenti alle fasi tipiche dell'esame:
+It covers every **Practitioner**-level lab from the [PortSwigger Web Security Academy](https://portswigger.net/web-security) (Apprentice and Expert labs excluded), organized into 31 categories split across three sections that correspond to the typical phases of the exam:
 
-- **Step 1-2** — categorie usate tipicamente per ottenere un primo accesso o scalare privilegi (XSS, CSRF, Access control, Authentication, HTTP request smuggling, JWT, OAuth, ecc.)
-- **Step 2-3** — categorie usate tipicamente per eseguire codice o estrarre dati una volta scalati ad admin (SQL injection, XXE, SSRF, Command injection, SSTI, Path traversal, Insecure deserialization, File upload)
-- **Altre categorie** — non mappate su uno stage fisso (WebSockets, Information disclosure, Business logic, ecc.)
+- **Step 1-2** — categories typically used to gain initial access or escalate privileges (XSS, CSRF, Access control, Authentication, HTTP request smuggling, JWT, OAuth, etc.)
+- **Step 2-3** — categories typically used to execute code or extract data once you've escalated to admin (SQL injection, XXE, SSRF, Command injection, SSTI, Path traversal, Insecure deserialization, File upload)
+- **Other categories** — not mapped to a fixed stage (WebSockets, Information disclosure, Business logic, etc.)
 
-Per ogni lab è indicato:
-- **Segnale** — come riconoscere la vulnerabilità
-- **Soluzione** — l'approccio per sfruttarla
-- **Payload** — un esempio concreto
-- **Link** — collegamento diretto al lab ufficiale su PortSwigger
-- **Step** — a quale fase dell'esame (1, 2 o 3) il lab è più utile, basato sull'analisi dello scenario/premessa del lab (non solo sulla presenza di credenziali)
+For each lab you'll find:
+- **Signal** — how to recognize the vulnerability
+- **Solution** — the approach to exploit it
+- **Payload** — a concrete example
+- **Link** — direct link to the official lab on PortSwigger
+- **Step** — which exam stage (1, 2 or 3) the lab best fits, based on an analysis of the lab's scenario/premise (not merely whether credentials are provided)
 
-In testa al documento c'è una tabella riassuntiva categoria → stage tipico.
+At the top of the document there's a summary table mapping each category to its typical stage.
 
-## File
+## Files
 
-- [`BSCP-cheatsheet-IT.md`](./BSCP-cheatsheet-IT.md) — versione italiana
-- [`BSCP-cheatsheet-EN.md`](./BSCP-cheatsheet-EN.md) — versione inglese
+- [`BSCP-cheatsheet-IT.md`](./BSCP-cheatsheet-IT.md) — Italian version
+- [`BSCP-cheatsheet-EN.md`](./BSCP-cheatsheet-EN.md) — English version
 
 ## Disclaimer
 
-Note di studio personali, non affiliate con PortSwigger. Per i dettagli completi e aggiornati fare sempre riferimento alla [Web Security Academy](https://portswigger.net/web-security).
+Personal study notes, not affiliated with PortSwigger. Always refer to the [Web Security Academy](https://portswigger.net/web-security) for the complete and up-to-date material.
