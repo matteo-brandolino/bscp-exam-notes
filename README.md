@@ -2,11 +2,12 @@
 
 Personal cheat sheet for the **Burp Suite Certified Practitioner (BSCP)** certification.
 
-It covers every **Practitioner**-level lab from the [PortSwigger Web Security Academy](https://portswigger.net/web-security) (Apprentice and Expert labs excluded), organized into 31 categories split across three sections that correspond to the typical phases of the exam:
+It covers every **Practitioner**-level lab from the [PortSwigger Web Security Academy](https://portswigger.net/web-security) (Apprentice and Expert labs excluded), organized into 31 categories split across four sections, ordered to follow the Foothold → Privilege Escalation → Data Exfiltration structure of [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study):
 
-- **Step 1-2** — categories typically used to gain initial access or escalate privileges (XSS, CSRF, Access control, Authentication, HTTP request smuggling, JWT, OAuth, etc.)
-- **Step 2-3** — categories typically used to execute code or extract data once you've escalated to admin (SQL injection, XXE, SSRF, Command injection, SSTI, Path traversal, Insecure deserialization, File upload)
-- **Other categories** — not mapped to a fixed stage (WebSockets, Information disclosure, Business logic, etc.)
+- **Stage 1 (Foothold)** — categories typically used to gain initial access against an anonymous/generic victim, with no account of your own needed (Information disclosure, DOM-based vulnerabilities, XSS, Web cache poisoning, Host header attacks, HTTP request smuggling, Authentication)
+- **Stage 2 (Privilege escalation)** — categories where the lab already hands you valid low-privilege credentials, and the exploit targets a specific, already-authenticated victim (often admin) to steal their session or force an action — CSRF labs included: every CSRF lab starts with your own account, so it is never Stage 1 (CSRF, SQL injection, JWT, Prototype pollution, API testing, Access control, GraphQL, CORS)
+- **Stage 3 (Data exfiltration)** — categories typically used to execute code or extract data once escalated to admin (XXE, SSRF, SSTI, Path traversal, File upload, Insecure deserialization, OS command injection)
+- **Other categories** — not covered by botesjuan's breakdown, so not mapped to a single fixed stage (Clickjacking, OAuth, WebSockets, Business logic, Essential skills, Race conditions, NoSQL injection, Web LLM attacks, Web cache deception)
 
 For each lab you'll find:
 - **Signal** — how to recognize the vulnerability
