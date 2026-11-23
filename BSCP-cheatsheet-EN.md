@@ -31,6 +31,7 @@ Nov 15, 2026
 | SQL Injection |  | ✓ |  |
 | GraphQL API vulnerabilities |  | ✓ |  |
 | API testing |  | ✓ |  |
+| Business logic vulnerabilities |  | ✓ |  |
 | Prototype pollution |  | ✓ | ✓ |
 | XXE injection |  |  | ✓ |
 | SSRF |  |  | ✓ |
@@ -39,7 +40,6 @@ Nov 15, 2026
 | Path traversal |  |  | ✓ |
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
-| Business logic vulnerabilities |  |  | ✓ |
 | Race conditions |  |  | ✓ |
 | NoSQL injection |  |  | ✓ |
 | Web LLM attacks |  |  | ✓ |
@@ -1416,7 +1416,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Step: 2
 
 
-## Business logic vulnerabilities
+## Business logic vulnerabilities — Typical stage: 2
 
 **How to recognize it (general):** no fixed payload pattern — you need to understand the app's business flow/rules and look for implicit assumptions about input, step sequencing, or excessive trust in client-side checks; test with anomalous values (negative, huge, missing), skipping workflow steps, or removing parameters one at a time.
 
@@ -1428,6 +1428,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: while entering the 2FA code, change the parameter identifying the target user (e.g. `username=other-user`) while keeping your own session; if the app doesn't verify the match, you can bypass another user's 2FA by forcing a code (e.g. via brute-force on 4 digits).
 - Payload: in the 2FA verification request, change `username=victim` while keeping your own `mfa-code`, or brute-force the victim's 4-digit code
 - Link: [2FA broken logic](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-broken-logic)
+- Step: 2
 
 ### B. Handling unconventional input
 
@@ -1437,6 +1438,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: enter a negative or extremely high value in the quantity/amount field to manipulate the total calculation in your favor (e.g. a negative price that reduces the total below zero).
 - Payload: `quantity=-15` on an expensive item, so that the cart total comes out negative/discounted
 - Link: [Low-level logic flaw](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-low-level)
+- Step: 2
 
 **3. Inconsistent handling of exceptional input**
 
@@ -1444,6 +1446,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: identify the function that handles the anomalous input less strictly and use it to reach an unintended state that another, more permissive function will exploit to your advantage.
 - Payload: e.g. set a huge quantity (`quantity=999999999`) that causes an overflow/wraparound in the total calculation, bringing it to a low or negative value
 - Link: [Inconsistent handling of exceptional input](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-inconsistent-handling-of-exceptional-input)
+- Step: 2
 
 ### C. Flawed assumptions about user behavior
 
@@ -1453,6 +1456,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: selectively remove parameters from a multi-purpose request to reach an unintended code path (e.g. removing the current-password check while leaving only the email change, allowing other sensitive fields to be modified too without additional authentication).
 - Payload: a profile-update request with only `email=attacker@evil.com`, omitting `current-password`, if the endpoint conditionally handles both functions
 - Link: [Weak isolation on dual-use endpoint](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-weak-isolation-on-dual-use-endpoint)
+- Step: 2
 
 **5. Insufficient workflow validation (step sequence)**
 
@@ -1460,6 +1464,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: use "forced browsing" to jump directly to a later step (e.g. the order confirmation page) without having completed the required earlier steps (e.g. payment), achieving the final effect (e.g. confirmed order) without having met the conditions.
 - Payload: navigate directly to `/cart/checkout/confirmation` skipping `/cart/checkout/payment`
 - Link: [Insufficient workflow validation](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-insufficient-workflow-validation)
+- Step: 2
 
 **6. Authentication bypass via flawed state machine**
 
@@ -1467,6 +1472,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: identify which request in the final state of the flow actually grants access (e.g. setting the authenticated session cookie) and send it directly, skipping intermediate steps (e.g. entering the 2FA code).
 - Payload: repeat/force the login flow's final request (e.g. `GET /my-account` after having only partially authenticated) without completing the verification step
 - Link: [Authentication bypass via flawed state machine](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-flawed-state-machine)
+- Step: 2
 
 ### D. Domain-specific flaws and encryption oracles
 
@@ -1476,6 +1482,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: reach the threshold required for the discount (e.g. add items until exceeding the minimum amount), apply the discount/coupon, then remove items from the cart while keeping the already-applied discount, resulting in a final price far below what was intended.
 - Payload: add items to exceed the discount threshold → apply the coupon → remove items from the cart before final checkout
 - Link: [Infinite money logic flaw](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-infinite-money)
+- Step: 2
 
 **8. Authentication bypass via encryption oracle**
 
@@ -1483,6 +1490,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: use the feature that acts as an "encryption oracle" to encrypt a payload of your choosing (e.g. an authentication token for another user), then insert the resulting ciphertext into the other feature's sensitive parameter to impersonate the victim.
 - Payload: use the oracle to encrypt a string structured like the session/reset token (e.g. `administrator|<future-timestamp>`), then send it as the authentication cookie/parameter value
 - Link: [Authentication bypass via encryption oracle](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-encryption-oracle)
+- Step: 2
 
 
 ## Essential skills — Typical stage: 1-2-3
