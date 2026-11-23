@@ -56,11 +56,27 @@ Categories typically used to gain initial access: against an anonymous/generic v
 
 **How to recognize it (general):** fuzz parameters for verbose errors, `/robots.txt`, `/sitemap.xml`, directory listing, HTML comments, debug pages, backup files (`~`, `.bak`, `.old`), and exposed version-control folders (`/.git`).
 
+**Content discovery (directory and file fuzzing):** enumeration starts by fuzzing for hidden paths and files. Use Burp's *Content discovery* engagement tool (with a custom wordlist) or `ffuf`; always check `/robots.txt` and `/sitemap.xml` too, as they often reveal unlinked paths. Also always read the page **source code**: developer comments can point to hidden files or paths (e.g. a debug page leading to another exploit).
+
+```bash
+# wordlist built for PortSwigger labs (from botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study)
+wget https://raw.githubusercontent.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study/main/wordlists/burp-labs-wordlist.txt
+
+ffuf -c -w ./burp-labs-wordlist.txt -u https://TARGET.web-security-academy.net/FUZZ
+```
+
 **1. Information disclosure in version control history (Git)**
 
 - Signal: the project's `.git` directory is publicly accessible (e.g. `/.git/` responds with content instead of 404).
 - Solution: download the entire `.git` structure (even file by file if there's no directory listing, reconstructing known objects) and open it with a local Git installation to explore the commit history; compare diffs between commits to find sensitive data removed in later commits (credentials, keys, old code).
 - Payload: download `/.git/HEAD`, `/.git/index`, objects under `/.git/objects/...` etc., then locally run `git log -p` / `git show <commit>` to inspect the history and diffs
+- With `git-cola` (GUI): recursively download the `.git` folder, open the local copy as a repo, browse the branches/commits and select **Undo last commit**: the diff window shows the admin password removed in the last commit.
+
+```bash
+wget -r https://TARGET.web-security-academy.net/.git/
+
+git-cola --repo TARGET.web-security-academy.net/
+```
 - Link: [Information disclosure in version control history](https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-in-version-control-history)
 - Step: 1
 

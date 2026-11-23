@@ -56,11 +56,27 @@ Categorie tipicamente usate per ottenere il primo accesso: contro una vittima an
 
 **Come riconoscerla (generale):** cerca fuzzing su parametri per errori verbosi, `/robots.txt`, `/sitemap.xml`, directory listing, commenti HTML, pagine di debug, file di backup (`~`, `.bak`, `.old`), e cartelle di version control esposte (`/.git`).
 
+**Content discovery (fuzzing di directory e file):** l'enumerazione parte dal fuzzing di percorsi e file nascosti. Usa il *Content discovery* degli engagement tools di Burp (con una wordlist personalizzata) oppure `ffuf`; controlla sempre anche `/robots.txt` e `/sitemap.xml`, che spesso rivelano percorsi non linkati. In più, apri sempre il **sorgente** della pagina: i commenti degli sviluppatori possono indicare file o percorsi nascosti (es. una pagina di debug che porta a un altro exploit).
+
+```bash
+# wordlist dedicata ai lab PortSwigger (da botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study)
+wget https://raw.githubusercontent.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study/main/wordlists/burp-labs-wordlist.txt
+
+ffuf -c -w ./burp-labs-wordlist.txt -u https://TARGET.web-security-academy.net/FUZZ
+```
+
 **1. Information disclosure nella storia del version control (Git)**
 
 - Segnale: la directory `.git` del progetto è accessibile pubblicamente (es. `/.git/` risponde con contenuti invece di 404).
 - Soluzione: scaricare l'intera struttura `.git` (anche file per file se non c'è directory listing, ricostruendo gli oggetti noti) e aprirla con un'installazione locale di Git per esplorare la cronologia dei commit; confrontare i diff tra commit per trovare dati sensibili rimossi in commit successivi (credenziali, chiavi, vecchio codice).
 - Payload: scaricare `/.git/HEAD`, `/.git/index`, oggetti in `/.git/objects/...` ecc., poi localmente `git log -p` / `git show <commit>` per ispezionare la history e i diff
+- Con `git-cola` (GUI): scaricare ricorsivamente la cartella `.git`, aprire la copia locale come repo, esplorare i branch/commit e selezionare **Undo last commit**: nella finestra dei diff compare la password dell'admin rimossa nell'ultimo commit.
+
+```bash
+wget -r https://TARGET.web-security-academy.net/.git/
+
+git-cola --repo TARGET.web-security-academy.net/
+```
 - Link: [Information disclosure in version control history](https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-in-version-control-history)
 - Step: 1
 
