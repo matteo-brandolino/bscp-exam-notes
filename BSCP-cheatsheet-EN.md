@@ -40,11 +40,11 @@ Nov 15, 2026
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
 | Business logic vulnerabilities |  |  | ✓ |
-| Essential skills |  |  | ✓ |
 | Race conditions |  |  | ✓ |
 | NoSQL injection |  |  | ✓ |
 | Web LLM attacks |  |  | ✓ |
 | Web cache deception |  |  | ✓ |
+| Essential skills | ✓ | ✓ | ✓ |
 
 
 # Stage 1 — Foothold (initial access)
@@ -836,6 +836,7 @@ When the input passes through a parser (e.g. XML) or is filtered by a WAF: obfus
 - Payload: `<storeId><@hex_entities>1 UNION SELECT username || '~' || password FROM users</@hex_entities></storeId>`
 - Link: [SQL injection with filter bypass via XML encoding](https://portswigger.net/web-security/sql-injection/lab-sql-injection-with-filter-bypass-via-xml-encoding)
 - Step: 2
+- Step: 2
 
 
 ## JWT — Typical stage: 2
@@ -1484,7 +1485,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Link: [Authentication bypass via encryption oracle](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-encryption-oracle)
 
 
-## Essential skills
+## Essential skills — Typical stage: 1-2-3
 
 **How to recognize it (general):** cross-cutting skills for adapting known techniques to real, already-patched targets — obfuscating payloads to bypass filters/WAFs, and using Burp Scanner in a targeted way instead of full scans.
 
@@ -1501,6 +1502,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: instead of a full site scan, select the single interesting request in Burp and launch "Do active scan" on just that one, to quickly identify known vulnerabilities without the overhead of a full crawl/audit.
 - Payload: (technique, not a payload) right-click the request in Burp → "Do active scan"
 - Link: [Discovering vulnerabilities quickly with targeted scanning](https://portswigger.net/web-security/essential-skills/using-burp-scanner-during-manual-testing/lab-discovering-vulnerabilities-quickly-with-targeted-scanning)
+- Step: 3
 
 **3. Scanning non-standard data structures**
 
@@ -1508,6 +1510,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: manually select the specific substring of interest (e.g. just `carlos`) in the message editor and use "Scan selected insertion point" (or the "Scan manual insertion point" extension) to test only that portion of the parameter.
 - Payload: (technique) highlight the target substring in the parameter value → right-click → "Scan selected insertion point"
 - Link: [Scanning non-standard data structures](https://portswigger.net/web-security/essential-skills/using-burp-scanner-during-manual-testing/lab-scanning-non-standard-data-structures)
+- Step: 1
 
 
 ## Race conditions
