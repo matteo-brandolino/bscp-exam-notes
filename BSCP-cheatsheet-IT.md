@@ -14,19 +14,22 @@ Nov 15, 2026
 
 | Categoria | Stage 1 | Stage 2 | Stage 3 |
 | --- | --- | --- | --- |
-| Cross-site scripting | ✓ | ✓ |  |
-| CSRF |  | ✓ |  |
-| Clickjacking | ✓ | ✓ |  |
 | DOM-based vulnerabilities | ✓ |  |  |
-| CORS |  | ✓ |  |
-| HTTP request smuggling | ✓ | ✓ |  |
-| Access control |  | ✓ |  |
-| Authentication | ✓ | ✓ |  |
 | Web cache poisoning | ✓ |  |  |
+| Cross-site scripting | ✓ | ✓ |  |
+| Clickjacking | ✓ | ✓ |  |
+| HTTP request smuggling | ✓ | ✓ |  |
+| Authentication | ✓ | ✓ |  |
 | HTTP Host header attacks | ✓ | ✓ |  |
 | OAuth authentication | ✓ | ✓ |  |
+| CSRF |  | ✓ |  |
+| CORS |  | ✓ |  |
+| Access control |  | ✓ |  |
 | JWT |  | ✓ |  |
 | SQL Injection |  | ✓ |  |
+| GraphQL API vulnerabilities |  | ✓ |  |
+| API testing |  | ✓ |  |
+| Prototype pollution |  | ✓ | ✓ |
 | XXE injection |  |  | ✓ |
 | SSRF |  |  | ✓ |
 | OS command injection |  |  | ✓ |
@@ -38,11 +41,8 @@ Nov 15, 2026
 | Information disclosure |  |  | ✓ |
 | Business logic vulnerabilities |  |  | ✓ |
 | Essential skills |  |  | ✓ |
-| Prototype pollution |  | ✓ | ✓ |
-| GraphQL API vulnerabilities |  | ✓ |  |
 | Race conditions |  |  | ✓ |
 | NoSQL injection |  |  | ✓ |
-| API testing |  | ✓ |  |
 | Web LLM attacks |  |  | ✓ |
 | Web cache deception |  |  | ✓ |
 
