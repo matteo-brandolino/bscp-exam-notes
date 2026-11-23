@@ -14,6 +14,7 @@ Nov 15, 2026
 
 | Categoria | Stage 1 | Stage 2 | Stage 3 |
 | --- | --- | --- | --- |
+| Information disclosure | ✓ |  |  |
 | DOM-based vulnerabilities | ✓ |  |  |
 | Web cache poisoning | ✓ |  |  |
 | Cross-site scripting | ✓ | ✓ |  |
@@ -38,7 +39,6 @@ Nov 15, 2026
 | Path traversal |  |  | ✓ |
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
-| Information disclosure |  |  | ✓ |
 | Business logic vulnerabilities |  |  | ✓ |
 | Essential skills |  |  | ✓ |
 | Race conditions |  |  | ✓ |
@@ -52,7 +52,7 @@ Nov 15, 2026
 Categorie tipicamente usate per ottenere il primo accesso: contro una vittima anonima/generica, senza bisogno di credenziali proprie. Ordine conforme a [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) (sezione "Foothold").
 
 
-## Information disclosure
+## Information disclosure — Stage tipico: 1
 
 **Come riconoscerla (generale):** cerca fuzzing su parametri per errori verbosi, `/robots.txt`, `/sitemap.xml`, directory listing, commenti HTML, pagine di debug, file di backup (`~`, `.bak`, `.old`), e cartelle di version control esposte (`/.git`).
 
@@ -62,6 +62,7 @@ Categorie tipicamente usate per ottenere il primo accesso: contro una vittima an
 - Soluzione: scaricare l'intera struttura `.git` (anche file per file se non c'è directory listing, ricostruendo gli oggetti noti) e aprirla con un'installazione locale di Git per esplorare la cronologia dei commit; confrontare i diff tra commit per trovare dati sensibili rimossi in commit successivi (credenziali, chiavi, vecchio codice).
 - Payload: scaricare `/.git/HEAD`, `/.git/index`, oggetti in `/.git/objects/...` ecc., poi localmente `git log -p` / `git show <commit>` per ispezionare la history e i diff
 - Link: [Information disclosure in version control history](https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-in-version-control-history)
+- Step: 1
 
 
 ## DOM-based vulnerabilities — Stage tipico: 1

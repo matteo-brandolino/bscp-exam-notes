@@ -14,6 +14,7 @@ Nov 15, 2026
 
 | Category | Stage 1 | Stage 2 | Stage 3 |
 | --- | --- | --- | --- |
+| Information disclosure | ✓ |  |  |
 | DOM-based vulnerabilities | ✓ |  |  |
 | Web cache poisoning | ✓ |  |  |
 | Cross-site scripting | ✓ | ✓ |  |
@@ -38,7 +39,6 @@ Nov 15, 2026
 | Path traversal |  |  | ✓ |
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
-| Information disclosure |  |  | ✓ |
 | Business logic vulnerabilities |  |  | ✓ |
 | Essential skills |  |  | ✓ |
 | Race conditions |  |  | ✓ |
@@ -52,7 +52,7 @@ Nov 15, 2026
 Categories typically used to gain initial access: against an anonymous/generic victim, with no need for your own credentials. Order follows [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) ("Foothold" section).
 
 
-## Information disclosure
+## Information disclosure — Typical stage: 1
 
 **How to recognize it (general):** fuzz parameters for verbose errors, `/robots.txt`, `/sitemap.xml`, directory listing, HTML comments, debug pages, backup files (`~`, `.bak`, `.old`), and exposed version-control folders (`/.git`).
 
@@ -62,6 +62,7 @@ Categories typically used to gain initial access: against an anonymous/generic v
 - Solution: download the entire `.git` structure (even file by file if there's no directory listing, reconstructing known objects) and open it with a local Git installation to explore the commit history; compare diffs between commits to find sensitive data removed in later commits (credentials, keys, old code).
 - Payload: download `/.git/HEAD`, `/.git/index`, objects under `/.git/objects/...` etc., then locally run `git log -p` / `git show <commit>` to inspect the history and diffs
 - Link: [Information disclosure in version control history](https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-in-version-control-history)
+- Step: 1
 
 
 ## DOM-based vulnerabilities — Typical stage: 1
