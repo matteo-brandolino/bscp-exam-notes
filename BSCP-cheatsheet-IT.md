@@ -22,6 +22,7 @@ Nov 15, 2026
 | Authentication | ✓ | ✓ |  |
 | HTTP Host header attacks | ✓ | ✓ |  |
 | OAuth authentication | ✓ | ✓ |  |
+| WebSockets | ✓ | ✓ |  |
 | CSRF |  | ✓ |  |
 | CORS |  | ✓ |  |
 | Access control |  | ✓ |  |
@@ -37,7 +38,6 @@ Nov 15, 2026
 | Path traversal |  |  | ✓ |
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
-| WebSockets |  |  | ✓ |
 | Information disclosure |  |  | ✓ |
 | Business logic vulnerabilities |  |  | ✓ |
 | Essential skills |  |  | ✓ |
