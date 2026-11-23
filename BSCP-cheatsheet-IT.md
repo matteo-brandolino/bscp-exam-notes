@@ -32,6 +32,8 @@ Nov 15, 2026
 | GraphQL API vulnerabilities |  | ✓ |  |
 | API testing |  | ✓ |  |
 | Business logic vulnerabilities |  | ✓ |  |
+| Race conditions |  | ✓ |  |
+| NoSQL injection |  | ✓ |  |
 | Prototype pollution |  | ✓ | ✓ |
 | XXE injection |  |  | ✓ |
 | SSRF |  |  | ✓ |
@@ -40,8 +42,6 @@ Nov 15, 2026
 | Path traversal |  |  | ✓ |
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
-| Race conditions |  |  | ✓ |
-| NoSQL injection |  |  | ✓ |
 | Web LLM attacks |  |  | ✓ |
 | Web cache deception |  |  | ✓ |
 | Essential skills | ✓ | ✓ | ✓ |
@@ -1134,6 +1134,64 @@ Quando l'input passa per un parser (es. XML) o è filtrato da un WAF: offusca il
 - Step: 2
 
 
+## Race conditions — Stage tipico: 2
+
+**Come riconoscerla (generale):** identifica endpoint security-critical single-use/rate-limited o che toccano lo stesso record; usa Burp Repeater "Send group in parallel" (single-packet attack su HTTP/2) per inviare richieste simultanee e cercare collisioni (es. bypass di un limite che dovrebbe essere monouso).
+
+**1. Bypassare i rate limit tramite race condition**
+
+- Segnale: un endpoint ha un rate-limit (es. su tentativi di login/codice) basato su un contatore aggiornato dopo il controllo.
+- Soluzione: inviare un numero elevato di richieste in parallelo (single-packet attack, es. con Turbo Intruder o Burp Repeater) prima che il contatore di rate-limit venga aggiornato, superando il limite previsto.
+- Payload: (tecnica) raggruppare \~20-30 richieste identiche e inviarle in parallelo con "Send group in parallel" in Burp Repeater
+- Link: [Bypassing rate limits via race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-bypassing-rate-limits)
+- Step: 2
+
+**2. Race condition multi-endpoint**
+
+- Segnale: un processo multi-step (es. checkout: validazione pagamento → conferma ordine) esegue la validazione e la conferma in richieste/passi separati che toccano lo stesso record.
+- Soluzione: inviare in parallelo una richiesta che modifica lo stato (es. aggiungere articoli al carrello) insieme alla richiesta che conferma l'ordine, sfruttando la finestra temporale tra validazione e conferma.
+- Payload: (tecnica) inviare in parallelo `POST /cart/add` e `POST /cart/checkout/confirm` nella stessa finestra temporale
+- Link: [Multi-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-multi-endpoint)
+- Step: 2
+
+**3. Race condition su singolo endpoint**
+
+- Segnale: lo stesso endpoint (es. reset password) salva dati in sessione (user ID, token) basandosi su parametri diversi per richieste diverse inviate nella stessa sessione.
+- Soluzione: inviare in parallelo due richieste allo stesso endpoint con parametri diversi (es. due username diversi) dalla stessa sessione; la race condition può far sì che il token di reset generato per un utente venga associato in sessione a un altro, permettendo di dirottare il reset password della vittima.
+- Payload: due richieste parallele `POST /forgot-password` con `username=vittima` e `username=proprio-account` dalla stessa sessione/connessione
+- Link: [Single-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-single-endpoint)
+- Step: 2
+
+**4. Sfruttare vulnerabilità time-sensitive**
+
+- Segnale: un token di sicurezza (es. reset password) viene generato usando un timestamp ad alta risoluzione invece di una stringa random crittograficamente sicura.
+- Soluzione: temporizzare due richieste (per due utenti diversi) in modo che vengano generate nello stesso istante esatto, producendo lo stesso token basato su timestamp; usare quel token per resettare la password della vittima.
+- Payload: (tecnica) inviare in parallelo `POST /forgot-password` per `username=vittima` e `username=proprio-account`, sperando in un timestamp identico per entrambi i token generati
+- Link: [Exploiting time-sensitive vulnerabilities](https://portswigger.net/web-security/race-conditions/lab-race-conditions-exploiting-time-sensitive-vulnerabilities)
+- Step: 2
+
+
+## NoSQL injection — Stage tipico: 2
+
+**Come riconoscerla (generale):** inietta caratteri speciali (`'"` ecc.) o fuzz string in parametri usati in query MongoDB per vedere se causano errori/cambi di risposta; testa condizioni booleane (`' && 0 && 'x` vs `' && 1 && 'x`); testa operatori come `$ne`, `$regex`, `$where` sia in JSON (`{"field":{"$ne":"invalid"}}`) sia in URL (`field[$ne]=invalid`).
+
+**1. Sfruttare NoSQL injection (sintassi) per estrarre dati**
+
+- Segnale: una query usa l'operatore `$where` (che esegue JavaScript) con input controllabile concatenato in una stringa, es. per confrontare un username.
+- Soluzione: iniettare codice JavaScript che confronta carattere per carattere un campo sensibile (es. password) con un valore noto, osservando se la condizione booleana cambia la risposta dell'app; ripetere per estrarre il dato un carattere alla volta.
+- Payload: `admin' && this.password[0] == 'a' || 'a'=='b` (poi iterare su ogni carattere/posizione)
+- Link: [Exploiting NoSQL injection to extract data](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-data)
+- Step: 2
+
+**2. Sfruttare NoSQL operator injection per estrarre campi sconosciuti**
+
+- Segnale: la query originale non usa `$where`, ma riesci a iniettare tu stesso l'operatore come parametro aggiuntivo nel JSON e confermi che venga valutato (differenza di risposta tra `"$where":"0"` e `"$where":"1"`).
+- Soluzione: una volta confermata l'esecuzione di JavaScript via `$where` iniettato, usare `Object.keys(this)` per enumerare i nomi dei campi del documento carattere per carattere, senza doverli indovinare o usare una wordlist.
+- Payload: `"$where":"Object.keys(this)[0].match('^.{0}a.*')"` (iterando sulla posizione del carattere e sulle lettere per ricostruire il nome del campo)
+- Link: [Exploiting NoSQL operator injection to extract unknown fields](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-unknown-fields)
+- Step: 2
+
+
 # Stage 3 — Data exfiltration (esecuzione codice ed estrazione dati)
 
 Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalati ad admin. Ordine conforme a [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) (sezione "Data Exfiltration").
@@ -1519,58 +1577,6 @@ Non presenti nel repository di riferimento botesjuan (o non mappabili a un singo
 - Payload: (tecnica) evidenziare la sottostringa target nel valore del parametro → tasto destro → "Scan selected insertion point"
 - Link: [Scanning non-standard data structures](https://portswigger.net/web-security/essential-skills/using-burp-scanner-during-manual-testing/lab-scanning-non-standard-data-structures)
 - Step: 1
-
-
-## Race conditions
-
-**Come riconoscerla (generale):** identifica endpoint security-critical single-use/rate-limited o che toccano lo stesso record; usa Burp Repeater "Send group in parallel" (single-packet attack su HTTP/2) per inviare richieste simultanee e cercare collisioni (es. bypass di un limite che dovrebbe essere monouso).
-
-**1. Bypassare i rate limit tramite race condition**
-
-- Segnale: un endpoint ha un rate-limit (es. su tentativi di login/codice) basato su un contatore aggiornato dopo il controllo.
-- Soluzione: inviare un numero elevato di richieste in parallelo (single-packet attack, es. con Turbo Intruder o Burp Repeater) prima che il contatore di rate-limit venga aggiornato, superando il limite previsto.
-- Payload: (tecnica) raggruppare \~20-30 richieste identiche e inviarle in parallelo con "Send group in parallel" in Burp Repeater
-- Link: [Bypassing rate limits via race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-bypassing-rate-limits)
-
-**2. Race condition multi-endpoint**
-
-- Segnale: un processo multi-step (es. checkout: validazione pagamento → conferma ordine) esegue la validazione e la conferma in richieste/passi separati che toccano lo stesso record.
-- Soluzione: inviare in parallelo una richiesta che modifica lo stato (es. aggiungere articoli al carrello) insieme alla richiesta che conferma l'ordine, sfruttando la finestra temporale tra validazione e conferma.
-- Payload: (tecnica) inviare in parallelo `POST /cart/add` e `POST /cart/checkout/confirm` nella stessa finestra temporale
-- Link: [Multi-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-multi-endpoint)
-
-**3. Race condition su singolo endpoint**
-
-- Segnale: lo stesso endpoint (es. reset password) salva dati in sessione (user ID, token) basandosi su parametri diversi per richieste diverse inviate nella stessa sessione.
-- Soluzione: inviare in parallelo due richieste allo stesso endpoint con parametri diversi (es. due username diversi) dalla stessa sessione; la race condition può far sì che il token di reset generato per un utente venga associato in sessione a un altro, permettendo di dirottare il reset password della vittima.
-- Payload: due richieste parallele `POST /forgot-password` con `username=vittima` e `username=proprio-account` dalla stessa sessione/connessione
-- Link: [Single-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-single-endpoint)
-
-**4. Sfruttare vulnerabilità time-sensitive**
-
-- Segnale: un token di sicurezza (es. reset password) viene generato usando un timestamp ad alta risoluzione invece di una stringa random crittograficamente sicura.
-- Soluzione: temporizzare due richieste (per due utenti diversi) in modo che vengano generate nello stesso istante esatto, producendo lo stesso token basato su timestamp; usare quel token per resettare la password della vittima.
-- Payload: (tecnica) inviare in parallelo `POST /forgot-password` per `username=vittima` e `username=proprio-account`, sperando in un timestamp identico per entrambi i token generati
-- Link: [Exploiting time-sensitive vulnerabilities](https://portswigger.net/web-security/race-conditions/lab-race-conditions-exploiting-time-sensitive-vulnerabilities)
-
-
-## NoSQL injection
-
-**Come riconoscerla (generale):** inietta caratteri speciali (`'"` ecc.) o fuzz string in parametri usati in query MongoDB per vedere se causano errori/cambi di risposta; testa condizioni booleane (`' && 0 && 'x` vs `' && 1 && 'x`); testa operatori come `$ne`, `$regex`, `$where` sia in JSON (`{"field":{"$ne":"invalid"}}`) sia in URL (`field[$ne]=invalid`).
-
-**1. Sfruttare NoSQL injection (sintassi) per estrarre dati**
-
-- Segnale: una query usa l'operatore `$where` (che esegue JavaScript) con input controllabile concatenato in una stringa, es. per confrontare un username.
-- Soluzione: iniettare codice JavaScript che confronta carattere per carattere un campo sensibile (es. password) con un valore noto, osservando se la condizione booleana cambia la risposta dell'app; ripetere per estrarre il dato un carattere alla volta.
-- Payload: `admin' && this.password[0] == 'a' || 'a'=='b` (poi iterare su ogni carattere/posizione)
-- Link: [Exploiting NoSQL injection to extract data](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-data)
-
-**2. Sfruttare NoSQL operator injection per estrarre campi sconosciuti**
-
-- Segnale: la query originale non usa `$where`, ma riesci a iniettare tu stesso l'operatore come parametro aggiuntivo nel JSON e confermi che venga valutato (differenza di risposta tra `"$where":"0"` e `"$where":"1"`).
-- Soluzione: una volta confermata l'esecuzione di JavaScript via `$where` iniettato, usare `Object.keys(this)` per enumerare i nomi dei campi del documento carattere per carattere, senza doverli indovinare o usare una wordlist.
-- Payload: `"$where":"Object.keys(this)[0].match('^.{0}a.*')"` (iterando sulla posizione del carattere e sulle lettere per ricostruire il nome del campo)
-- Link: [Exploiting NoSQL operator injection to extract unknown fields](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-unknown-fields)
 
 
 ## Web LLM attacks

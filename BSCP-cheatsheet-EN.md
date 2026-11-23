@@ -32,6 +32,8 @@ Nov 15, 2026
 | GraphQL API vulnerabilities |  | ✓ |  |
 | API testing |  | ✓ |  |
 | Business logic vulnerabilities |  | ✓ |  |
+| Race conditions |  | ✓ |  |
+| NoSQL injection |  | ✓ |  |
 | Prototype pollution |  | ✓ | ✓ |
 | XXE injection |  |  | ✓ |
 | SSRF |  |  | ✓ |
@@ -40,8 +42,6 @@ Nov 15, 2026
 | Path traversal |  |  | ✓ |
 | Insecure deserialization |  |  | ✓ |
 | File upload vulnerabilities |  |  | ✓ |
-| Race conditions |  |  | ✓ |
-| NoSQL injection |  |  | ✓ |
 | Web LLM attacks |  |  | ✓ |
 | Web cache deception |  |  | ✓ |
 | Essential skills | ✓ | ✓ | ✓ |
@@ -1134,6 +1134,64 @@ When the input passes through a parser (e.g. XML) or is filtered by a WAF: obfus
 - Step: 2
 
 
+## Race conditions — Typical stage: 2
+
+**How to recognize it (general):** identify security-critical, single-use/rate-limited endpoints or ones touching the same record; use Burp Repeater "Send group in parallel" (single-packet attack over HTTP/2) to send simultaneous requests and look for collisions (e.g. bypassing a limit that should be one-time use).
+
+**1. Bypassing rate limits via race conditions**
+
+- Signal: an endpoint has a rate limit (e.g. on login attempts/codes) based on a counter updated after the check.
+- Solution: send a large number of requests in parallel (single-packet attack, e.g. with Turbo Intruder or Burp Repeater) before the rate-limit counter is updated, exceeding the intended limit.
+- Payload: (technique) group \~20-30 identical requests and send them in parallel with "Send group in parallel" in Burp Repeater
+- Link: [Bypassing rate limits via race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-bypassing-rate-limits)
+- Step: 2
+
+**2. Multi-endpoint race condition**
+
+- Signal: a multi-step process (e.g. checkout: payment validation → order confirmation) performs validation and confirmation in separate requests/steps that touch the same record.
+- Solution: send in parallel a request that modifies the state (e.g. adding items to the cart) together with the request confirming the order, exploiting the time window between validation and confirmation.
+- Payload: (technique) send `POST /cart/add` and `POST /cart/checkout/confirm` in parallel within the same time window
+- Link: [Multi-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-multi-endpoint)
+- Step: 2
+
+**3. Single-endpoint race condition**
+
+- Signal: the same endpoint (e.g. password reset) saves data in the session (user ID, token) based on different parameters for different requests sent within the same session.
+- Solution: send two requests to the same endpoint in parallel with different parameters (e.g. two different usernames) from the same session; the race condition can cause the reset token generated for one user to become associated in the session with another, allowing the victim's password reset to be hijacked.
+- Payload: two parallel requests `POST /forgot-password` with `username=victim` and `username=your-own-account` from the same session/connection
+- Link: [Single-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-single-endpoint)
+- Step: 2
+
+**4. Exploiting time-sensitive vulnerabilities**
+
+- Signal: a security token (e.g. password reset) is generated using a high-resolution timestamp instead of a cryptographically secure random string.
+- Solution: time two requests (for two different users) so they're generated at the exact same instant, producing the same timestamp-based token; use that token to reset the victim's password.
+- Payload: (technique) send `POST /forgot-password` in parallel for `username=victim` and `username=your-own-account`, hoping for an identical timestamp for both generated tokens
+- Link: [Exploiting time-sensitive vulnerabilities](https://portswigger.net/web-security/race-conditions/lab-race-conditions-exploiting-time-sensitive-vulnerabilities)
+- Step: 2
+
+
+## NoSQL injection — Typical stage: 2
+
+**How to recognize it (general):** inject special characters (`'"` etc.) or fuzz strings into parameters used in MongoDB queries to see whether they cause errors/response changes; test boolean conditions (`' && 0 && 'x` vs `' && 1 && 'x`); test operators like `$ne`, `$regex`, `$where` either in JSON (`{"field":{"$ne":"invalid"}}`) or in the URL (`field[$ne]=invalid`).
+
+**1. Exploiting NoSQL injection (syntax injection) to extract data**
+
+- Signal: a query uses the `$where` operator (which executes JavaScript) with controllable input concatenated into a string, e.g. to compare a username.
+- Solution: inject JavaScript code that compares a sensitive field (e.g. password) character by character against a known value, observing whether the boolean condition changes the app's response; repeat to extract the data one character at a time.
+- Payload: `admin' && this.password[0] == 'a' || 'a'=='b` (then iterate over each character/position)
+- Link: [Exploiting NoSQL injection to extract data](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-data)
+- Step: 2
+
+**2. Exploiting NoSQL operator injection to extract unknown fields**
+
+- Signal: the original query doesn't use `$where`, but you can inject the operator yourself as an additional parameter in the JSON and confirm that it gets evaluated (a difference in response between `"$where":"0"` and `"$where":"1"`).
+- Solution: once JavaScript execution via injected `$where` is confirmed, use `Object.keys(this)` to enumerate the document's field names character by character, without having to guess them or use a wordlist.
+- Payload: `"$where":"Object.keys(this)[0].match('^.{0}a.*')"` (iterating over the character position and letters to reconstruct the field name)
+- Link: [Exploiting NoSQL operator injection to extract unknown fields](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-unknown-fields)
+- Step: 2
+
+
 # Stage 3 — Data exfiltration (code execution and data extraction)
 
 Categories typically used to execute code or extract data once escalated to admin. Order follows [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) ("Data Exfiltration" section).
@@ -1519,58 +1577,6 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Payload: (technique) highlight the target substring in the parameter value → right-click → "Scan selected insertion point"
 - Link: [Scanning non-standard data structures](https://portswigger.net/web-security/essential-skills/using-burp-scanner-during-manual-testing/lab-scanning-non-standard-data-structures)
 - Step: 1
-
-
-## Race conditions
-
-**How to recognize it (general):** identify security-critical, single-use/rate-limited endpoints or ones touching the same record; use Burp Repeater "Send group in parallel" (single-packet attack over HTTP/2) to send simultaneous requests and look for collisions (e.g. bypassing a limit that should be one-time use).
-
-**1. Bypassing rate limits via race conditions**
-
-- Signal: an endpoint has a rate limit (e.g. on login attempts/codes) based on a counter updated after the check.
-- Solution: send a large number of requests in parallel (single-packet attack, e.g. with Turbo Intruder or Burp Repeater) before the rate-limit counter is updated, exceeding the intended limit.
-- Payload: (technique) group \~20-30 identical requests and send them in parallel with "Send group in parallel" in Burp Repeater
-- Link: [Bypassing rate limits via race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-bypassing-rate-limits)
-
-**2. Multi-endpoint race condition**
-
-- Signal: a multi-step process (e.g. checkout: payment validation → order confirmation) performs validation and confirmation in separate requests/steps that touch the same record.
-- Solution: send in parallel a request that modifies the state (e.g. adding items to the cart) together with the request confirming the order, exploiting the time window between validation and confirmation.
-- Payload: (technique) send `POST /cart/add` and `POST /cart/checkout/confirm` in parallel within the same time window
-- Link: [Multi-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-multi-endpoint)
-
-**3. Single-endpoint race condition**
-
-- Signal: the same endpoint (e.g. password reset) saves data in the session (user ID, token) based on different parameters for different requests sent within the same session.
-- Solution: send two requests to the same endpoint in parallel with different parameters (e.g. two different usernames) from the same session; the race condition can cause the reset token generated for one user to become associated in the session with another, allowing the victim's password reset to be hijacked.
-- Payload: two parallel requests `POST /forgot-password` with `username=victim` and `username=your-own-account` from the same session/connection
-- Link: [Single-endpoint race conditions](https://portswigger.net/web-security/race-conditions/lab-race-conditions-single-endpoint)
-
-**4. Exploiting time-sensitive vulnerabilities**
-
-- Signal: a security token (e.g. password reset) is generated using a high-resolution timestamp instead of a cryptographically secure random string.
-- Solution: time two requests (for two different users) so they're generated at the exact same instant, producing the same timestamp-based token; use that token to reset the victim's password.
-- Payload: (technique) send `POST /forgot-password` in parallel for `username=victim` and `username=your-own-account`, hoping for an identical timestamp for both generated tokens
-- Link: [Exploiting time-sensitive vulnerabilities](https://portswigger.net/web-security/race-conditions/lab-race-conditions-exploiting-time-sensitive-vulnerabilities)
-
-
-## NoSQL injection
-
-**How to recognize it (general):** inject special characters (`'"` etc.) or fuzz strings into parameters used in MongoDB queries to see whether they cause errors/response changes; test boolean conditions (`' && 0 && 'x` vs `' && 1 && 'x`); test operators like `$ne`, `$regex`, `$where` either in JSON (`{"field":{"$ne":"invalid"}}`) or in the URL (`field[$ne]=invalid`).
-
-**1. Exploiting NoSQL injection (syntax injection) to extract data**
-
-- Signal: a query uses the `$where` operator (which executes JavaScript) with controllable input concatenated into a string, e.g. to compare a username.
-- Solution: inject JavaScript code that compares a sensitive field (e.g. password) character by character against a known value, observing whether the boolean condition changes the app's response; repeat to extract the data one character at a time.
-- Payload: `admin' && this.password[0] == 'a' || 'a'=='b` (then iterate over each character/position)
-- Link: [Exploiting NoSQL injection to extract data](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-data)
-
-**2. Exploiting NoSQL operator injection to extract unknown fields**
-
-- Signal: the original query doesn't use `$where`, but you can inject the operator yourself as an additional parameter in the JSON and confirm that it gets evaluated (a difference in response between `"$where":"0"` and `"$where":"1"`).
-- Solution: once JavaScript execution via injected `$where` is confirmed, use `Object.keys(this)` to enumerate the document's field names character by character, without having to guess them or use a wordlist.
-- Payload: `"$where":"Object.keys(this)[0].match('^.{0}a.*')"` (iterating over the character position and letters to reconstruct the field name)
-- Link: [Exploiting NoSQL operator injection to extract unknown fields](https://portswigger.net/web-security/nosql-injection/lab-nosql-injection-extract-unknown-fields)
 
 
 ## Web LLM attacks
