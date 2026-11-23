@@ -590,7 +590,7 @@ The sink isn't in the HTTP response but in client-side JavaScript: you need to f
 
 # Stage 2 — Privilege escalation (execution while authenticated)
 
-Categories typically used to escalate from an already-obtained access (even low-privilege, often handed to you directly by the lab) to a higher one — typically by targeting a specific, already-authenticated victim (account takeover, admin). **Note on CSRF**: every CSRF lab already hands you your own valid credentials; the exploit's purpose is to make an already-logged-in victim (often admin) perform an action. It is therefore never Stage 1 — the foothold is already guaranteed by the lab itself. Order follows [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) ("Privilege Escalation" section).
+Categories typically used to escalate from an already-obtained access (even low-privilege, often handed to you directly by the lab) to a higher one — typically by targeting a specific, already-authenticated victim (account takeover, admin). **Note on CSRF**: every CSRF lab already hands you your own valid credentials; the exploit's purpose is to make an already-logged-in victim (often admin) perform an action. It is therefore never Stage 1 — the foothold is already guaranteed by the lab itself. Order follows [botesjuan/...](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study) ("Privilege Escalation" section), except Business logic, which is not in that repository and is added at the end.
 
 
 ## Cross-site request forgery (CSRF) — Typical stage: 2
