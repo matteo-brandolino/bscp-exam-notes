@@ -47,6 +47,48 @@ Nov 15, 2026
 | [Essential skills](#essential-skills--typical-stage-1-2-3) | ✓ | ✓ | ✓ |
 
 
+## Functionality → vulnerability (exam triage)
+
+Start from what you **see in the app** and try the listed vulnerabilities first (links to the topic section). Fixed exam details: in Stage 3 the target is reading `/home/carlos/secret`; an internal service is often reachable at `localhost:6566`; for out-of-band attacks the most reliable channel is DNS exfiltration via Burp Collaborator.
+
+*Functionality→vulnerability mapping inspired by [D4mianWayne/BSCP](https://github.com/D4mianWayne/BSCP) (itself based on [DingyShark/BurpSuiteCertifiedPractitioner](https://github.com/DingyShark/BurpSuiteCertifiedPractitioner)).*
+
+| Functionality seen in the app | Stage | Try (→ section) |
+| --- | --- | --- |
+| Search bar / term reflected in results | 1-2 | [XSS](#cross-site-scripting--typical-stage-1-2) reflected/stored · [SQLi](#sql-injection--typical-stage-2) |
+| Blog comments / feedback shown on page | 1 | [Stored XSS](#cross-site-scripting--typical-stage-1-2) |
+| URL/fragment parameter in a JS sink or `postMessage` | 1 | [DOM XSS](#dom-based-vulnerabilities--typical-stage-1) · [Prototype pollution](#prototype-pollution) client-side |
+| Password reset link via email | 1 | [Host header](#http-host-header-attacks--typical-stage-1-2) (password reset poisoning) |
+| Login / registration | 1 | [Authentication](#authentication--typical-stage-1-2) (brute force, user enum, 2FA) · [SQLi](#sql-injection--typical-stage-2) |
+| `tracking.js` / `X-Cache` header / unkeyed parameter | 1 | [Web cache poisoning](#web-cache-poisoning--typical-stage-1) |
+| HTML comments, error messages, `/robots.txt`, backups | 1 | [Information disclosure](#information-disclosure--typical-stage-1) |
+| Front-end forwarding to the back-end (CL/TE) | 1-2 | [HTTP request smuggling](#http-request-smuggling--typical-stage-1-2) |
+| Framable page without `X-Frame-Options` | 1-2 | [Clickjacking](#clickjacking--typical-stage-1-2) |
+| OAuth login (`client_id`, `redirect_uri`) | 1-2 | [OAuth](#oauth-authentication--typical-stage-1-2) |
+| "Update email" / change email | 2 | [CSRF](#cross-site-request-forgery-csrf--typical-stage-2) · [SSRF](#server-side-request-forgery-ssrf--typical-stage-3) · [Race condition](#race-conditions--typical-stage-2) · [Business logic](#business-logic-vulnerabilities--typical-stage-2) |
+| Change password / dual-use endpoint | 2 | [Business logic](#business-logic-vulnerabilities--typical-stage-2) (dual-use) · [Access control](#access-control-vulnerabilities--typical-stage-2) |
+| JWT cookie (3 base64url parts) | 2 | [JWT](#jwt--typical-stage-2) |
+| Serialized session cookie (`O:`… / `rO0`…) | 2-3 | [Insecure deserialization](#insecure-deserialization--typical-stage-2-3) |
+| `TrackingId` cookie (server-side query) | 2 | [Blind SQLi](#sql-injection--typical-stage-2) |
+| `/admin`, `/admin-roles` endpoints | 2 | [Access control](#access-control-vulnerabilities--typical-stage-2) (URL/method/Referer) |
+| `role`/`isAdmin` field in profile (JSON) | 2 | [Mass assignment](#api-testing) · [Prototype pollution](#prototype-pollution) server-side |
+| Cross-origin API with `Access-Control-Allow-Credentials: true` | 2 | [CORS](#cross-origin-resource-sharing-cors--typical-stage-2) |
+| GraphQL endpoint (`/graphql`, `/api`) | 2 | [GraphQL](#graphql-api-vulnerabilities) (introspection, alias BF, CSRF) |
+| Live chat / WebSocket | 1-2 | [WebSockets / CSWSH](#websockets--typical-stage-1-2) |
+| Coupon / gift card / cart / discounts | 2 | [Business logic](#business-logic-vulnerabilities--typical-stage-2) (infinite money, low-level) |
+| Checkout / multi-step flow | 2 | [Race conditions](#race-conditions--typical-stage-2) · [Business logic](#business-logic-vulnerabilities--typical-stage-2) (workflow) |
+| Login/lookup with JSON body (operators) | 2 | [NoSQL injection](#nosql-injection--typical-stage-2) |
+| Cacheable path returning user data | 2 | [Web cache deception](#web-cache-deception--typical-stage-2) |
+| Reviews/content read by an LLM | 2-3 | [Web LLM](#web-llm-attacks--typical-stage-2-3) (indirect prompt injection) |
+| "Check stock" (XML body, `POST /product/stock`) | 3 | [XXE](#xml-external-entity-xxe-injection--typical-stage-3) · [SQLi filter bypass](#sql-injection--typical-stage-2) · [SSRF](#server-side-request-forgery-ssrf--typical-stage-3) |
+| Product image load (`filename` parameter) | 3 | [Path traversal / LFI](#path-traversal--typical-stage-3) |
+| Product description template / product details | 3 | [SSTI](#server-side-template-injection--typical-stage-3) (`{{7*7}}`) |
+| Feedback form (`email` field) | 3 | [OS command injection](#os-command-injection--typical-stage-3) (DNS exfil) |
+| URL/`Referer` parameter fetched server-side | 3 | [SSRF](#server-side-request-forgery-ssrf--typical-stage-3) (blind, `localhost:6566`) |
+| Avatar / file upload | 3 | [File upload RCE](#file-upload-vulnerabilities--typical-stage-3) · [XXE via SVG](#xml-external-entity-xxe-injection--typical-stage-3) |
+| Newsletter/subscription via LLM chat | 3 | [Web LLM](#web-llm-attacks--typical-stage-2-3) (OS command injection) |
+| Admin panel with maintenance jobs / JSON merge | 3 | [Prototype pollution RCE](#prototype-pollution-rce-server-side--typical-stage-3) |
+
 # Stage 1 — Foothold (initial access)
 
 Categories typically used to gain initial access: against an anonymous/generic victim, with no need for your own credentials. Order follows the initial summary table.
