@@ -25,7 +25,11 @@ At the top of the document there's a summary table mapping each category to its 
 
 ## Credits
 
-The exam-stage mapping (Stage 1 / Stage 2 / Stage 3) used in the summary table was cross-checked against the stage breakdown from [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study), used here as a reference with thanks to the author.
+- The exam-stage mapping (Stage 1 / Stage 2 / Stage 3) used in the summary table was cross-checked against the stage breakdown from [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study), which also provides the PortSwigger labs wordlist referenced in the notes.
+- The "Functionality → vulnerability" exam triage table was inspired by [D4mianWayne/BSCP](https://github.com/D4mianWayne/BSCP) (itself based on [DingyShark/BurpSuiteCertifiedPractitioner](https://github.com/DingyShark/BurpSuiteCertifiedPractitioner)).
+- [bscp.guide](https://bscp.guide/) (Hacking-Notes) — interactive exam checklist referenced in the strategy notes.
+
+Thanks to the respective authors.
 
 ## Disclaimer
 

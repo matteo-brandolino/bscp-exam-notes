@@ -2,8 +2,6 @@
 
 Nov 15, 2026
 
-*Credits: la mappatura Stage 1/2/3 della tabella riassuntiva è stata incrociata anche con [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study), usato qui come riferimento.*
-
 ## Meccaniche d'esame e strategia
 
 - **Un solo utente attivo per applicazione**: non puoi essere loggato come utente basso e admin insieme. Se nello Stage 1 non hai già usato un exploit interattivo (uno che passa dal "Deliver to Victim" dell'exploit server — XSS, CSRF, clickjacking), nello Stage 2 devi ricorrervi per dirottare la sessione admin.
@@ -49,36 +47,34 @@ Nov 15, 2026
 
 ## Funzionalità → vulnerabilità (triage d'esame)
 
-Parti da ciò che **vedi nell'app** e prova per prime le vulnerabilità indicate (link alla sezione del topic). Dettagli fissi d'esame: nello Stage 3 il target è leggere `/home/carlos/secret`; un servizio interno è spesso raggiungibile su `localhost:6566`; per gli attacchi out-of-band la via più affidabile è l'exfil DNS via Burp Collaborator.
-
-*Mappatura funzionalità→vulnerabilità ispirata a [D4mianWayne/BSCP](https://github.com/D4mianWayne/BSCP) (a sua volta basata su [DingyShark/BurpSuiteCertifiedPractitioner](https://github.com/DingyShark/BurpSuiteCertifiedPractitioner)).*
+Parti da ciò che **vedi nell'app** e prova per prime le vulnerabilità indicate (link alla sezione del topic); le righe sono ordinate per stage. Dettagli fissi d'esame: nello Stage 3 il target è leggere `/home/carlos/secret`; un servizio interno è spesso raggiungibile su `localhost:6566`; per gli attacchi out-of-band la via più affidabile è l'exfil DNS via Burp Collaborator.
 
 | Funzionalità osservata nell'app | Stage | Prova (→ sezione) |
 | --- | --- | --- |
-| Barra di ricerca / termine riflesso nei risultati | 1-2 | [XSS](#cross-site-scripting--stage-tipico-1-2) riflessa/stored · [SQLi](#sql-injection--stage-tipico-2) |
 | Commenti blog / feedback mostrati in pagina | 1 | [XSS stored](#cross-site-scripting--stage-tipico-1-2) |
 | Parametro URL/fragment in sink JS o `postMessage` | 1 | [DOM XSS](#dom-based-vulnerabilities--stage-tipico-1) · [Prototype pollution](#prototype-pollution) client-side |
 | Link di reset password via email | 1 | [Host header](#http-host-header-attacks--stage-tipico-1-2) (password reset poisoning) |
 | Login / registrazione | 1 | [Authentication](#authentication--stage-tipico-1-2) (brute force, user enum, 2FA) · [SQLi](#sql-injection--stage-tipico-2) |
 | `tracking.js` / header `X-Cache` / parametro non-keyed | 1 | [Web cache poisoning](#web-cache-poisoning--stage-tipico-1) |
 | Commenti HTML, messaggi d'errore, `/robots.txt`, backup | 1 | [Information disclosure](#information-disclosure--stage-tipico-1) |
+| Barra di ricerca / termine riflesso nei risultati | 1-2 | [XSS](#cross-site-scripting--stage-tipico-1-2) riflessa/stored · [SQLi](#sql-injection--stage-tipico-2) |
 | Front-end che inoltra al back-end (CL/TE) | 1-2 | [HTTP request smuggling](#http-request-smuggling--stage-tipico-1-2) |
 | Pagina frammabile senza `X-Frame-Options` | 1-2 | [Clickjacking](#clickjacking--stage-tipico-1-2) |
 | Login OAuth (`client_id`, `redirect_uri`) | 1-2 | [OAuth](#oauth-authentication--stage-tipico-1-2) |
+| Live chat / WebSocket | 1-2 | [WebSockets / CSWSH](#websockets--stage-tipico-1-2) |
 | "Update email" / cambio email | 2 | [CSRF](#cross-site-request-forgery-csrf--stage-tipico-2) · [SSRF](#server-side-request-forgery-ssrf--stage-tipico-3) · [Race condition](#race-conditions--stage-tipico-2) · [Business logic](#business-logic-vulnerabilities--stage-tipico-2) |
 | Cambio password / endpoint multiuso | 2 | [Business logic](#business-logic-vulnerabilities--stage-tipico-2) (dual-use) · [Access control](#access-control-vulnerabilities--stage-tipico-2) |
 | Cookie JWT (3 parti base64url) | 2 | [JWT](#jwt--stage-tipico-2) |
-| Cookie di sessione serializzato (`O:`… / `rO0`…) | 2-3 | [Insecure deserialization](#insecure-deserialization--stage-tipico-2-3) |
 | Cookie `TrackingId` (query lato server) | 2 | [SQLi blind](#sql-injection--stage-tipico-2) |
 | Endpoint `/admin`, `/admin-roles` | 2 | [Access control](#access-control-vulnerabilities--stage-tipico-2) (URL/metodo/Referer) |
 | Campo `role`/`isAdmin` nel profilo (JSON) | 2 | [Mass assignment](#api-testing) · [Prototype pollution](#prototype-pollution) server-side |
 | API cross-origin con `Access-Control-Allow-Credentials: true` | 2 | [CORS](#cross-origin-resource-sharing-cors--stage-tipico-2) |
 | Endpoint GraphQL (`/graphql`, `/api`) | 2 | [GraphQL](#graphql-api-vulnerabilities) (introspection, alias BF, CSRF) |
-| Live chat / WebSocket | 1-2 | [WebSockets / CSWSH](#websockets--stage-tipico-1-2) |
 | Coupon / gift card / carrello / sconti | 2 | [Business logic](#business-logic-vulnerabilities--stage-tipico-2) (infinite money, low-level) |
 | Checkout / flusso multi-step | 2 | [Race conditions](#race-conditions--stage-tipico-2) · [Business logic](#business-logic-vulnerabilities--stage-tipico-2) (workflow) |
 | Login/lookup con body JSON (operatori) | 2 | [NoSQL injection](#nosql-injection--stage-tipico-2) |
 | Path cacheabile che restituisce dati utente | 2 | [Web cache deception](#web-cache-deception--stage-tipico-2) |
+| Cookie di sessione serializzato (`O:`… / `rO0`…) | 2-3 | [Insecure deserialization](#insecure-deserialization--stage-tipico-2-3) |
 | Recensioni/contenuti letti da un LLM | 2-3 | [Web LLM](#web-llm-attacks--stage-tipico-2-3) (indirect prompt injection) |
 | "Check stock" (body XML, `POST /product/stock`) | 3 | [XXE](#xml-external-entity-xxe-injection--stage-tipico-3) · [SQLi filter bypass](#sql-injection--stage-tipico-2) · [SSRF](#server-side-request-forgery-ssrf--stage-tipico-3) |
 | Caricamento immagine prodotto (parametro `filename`) | 3 | [Path traversal / LFI](#path-traversal--stage-tipico-3) |
