@@ -1,8 +1,31 @@
 # BSCP Exam Notes
 
-Personal cheat sheet for the **Burp Suite Certified Practitioner (BSCP)** certification.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/matteo-brandolino/bscp-exam-notes)](https://github.com/matteo-brandolino/bscp-exam-notes/commits/main)
 
-It covers every **Practitioner**-level lab from the [PortSwigger Web Security Academy](https://portswigger.net/web-security) (Apprentice and Expert labs excluded), organized into 31 categories split across four sections, ordered to follow the Foothold → Privilege Escalation → Data Exfiltration structure of [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study):
+🇬🇧 English · [🇮🇹 Italiano](./README.it.md)
+
+**Cheat sheet to pass the Burp Suite Certified Practitioner (BSCP) exam faster: signal → payload → exam stage.**
+
+Notes for the **Burp Suite Certified Practitioner (BSCP)** certification by [PortSwigger](https://portswigger.net/). They cover every **Practitioner**-level lab of the [PortSwigger Web Security Academy](https://portswigger.net/web-security) (Apprentice and Expert labs excluded), with ready-to-use payloads, organized by exam stage.
+
+👉 **Read the cheat sheet:** [English](./BSCP-cheatsheet-EN.md) · [Italiano](./BSCP-cheatsheet-IT.md)
+
+## Quick preview
+
+The "Functionality → vulnerability" triage table maps what you see in the app to what to try, and to the exam stage:
+
+| You see… | Stage | Try |
+| --- | --- | --- |
+| Search bar / term reflected in results | 1-2 | XSS reflected/stored · SQLi |
+| JWT cookie (3 base64url parts) | 2 | JWT |
+| `TrackingId` cookie (server-side query) | 2 | Blind SQLi |
+| "Check stock" (XML body) | 3 | XXE · SQLi filter bypass · SSRF |
+| Product image load (`filename` parameter) | 3 | Path traversal / LFI |
+
+## What's inside
+
+31 categories split across four sections, ordered to follow the Foothold → Privilege Escalation → Data Exfiltration structure of [botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study](https://github.com/botesjuan/Burp-Suite-Certified-Practitioner-Exam-Study):
 
 - **Stage 1 (Foothold)** — categories typically used to gain initial access against an anonymous/generic victim, with no account of your own needed (Information disclosure, DOM-based vulnerabilities, XSS, Web cache poisoning, Host header attacks, HTTP request smuggling, Authentication)
 - **Stage 2 (Privilege escalation)** — categories where the lab already hands you valid low-privilege credentials, and the exploit targets a specific, already-authenticated victim (often admin) to steal their session or force an action — CSRF labs included: every CSRF lab starts with your own account, so it is never Stage 1 (CSRF, SQL injection, JWT, Prototype pollution, API testing, Access control, GraphQL, CORS, Business logic, Race conditions, NoSQL injection, Web cache deception, Web LLM attacks)
@@ -20,8 +43,13 @@ At the top of the document there's a summary table mapping each category to its 
 
 ## Files
 
-- [`BSCP-cheatsheet-IT.md`](./BSCP-cheatsheet-IT.md) — Italian version
 - [`BSCP-cheatsheet-EN.md`](./BSCP-cheatsheet-EN.md) — English version
+- [`BSCP-cheatsheet-IT.md`](./BSCP-cheatsheet-IT.md) — Italian version
+- [`README.it.md`](./README.it.md) — Italian README
+
+## Contributing
+
+Found a mistake, a broken lab link, or a better payload? [Open an issue](https://github.com/matteo-brandolino/bscp-exam-notes/issues) or send a pull request. Please keep the **Signal / Solution / Payload / Link / Step** format, and keep the EN and IT versions in sync when you can.
 
 ## Credits
 
@@ -33,4 +61,8 @@ Thanks to the respective authors.
 
 ## Disclaimer
 
-Personal study notes, not affiliated with PortSwigger. Always refer to the [Web Security Academy](https://portswigger.net/web-security) for the complete and up-to-date material.
+Personal study notes, not affiliated with PortSwigger. Always refer to the [Web Security Academy](https://portswigger.net/web-security) for the complete and up-to-date material. This repository contains notes on the public Academy labs only, not actual exam content.
+
+## License
+
+[MIT](./LICENSE)
